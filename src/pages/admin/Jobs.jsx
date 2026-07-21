@@ -1,0 +1,182 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Briefcase, Plus, Globe, Send, Pencil, Trash2 } from 'lucide-react'
+import { useFetch } from '../../components/hooks'
+import { LoadingSpinner, ErrorState, EmptyState, StatCard, PageHeader, Modal, Badge } from '../../components/UI'
+import { apiPost, apiPut, apiDelete } from '../../api/client'
+import { useToast } from '../../contexts/ToastContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { fmtDate } from '../../utils/helpers'
+
+const BLANK = {
+  title: '', company: '', department: '', location: '', employment_type: 'Full-time',
+  ctc_min: '', ctc_max: '', experience_min: '', openings: 1, description: '',
+  required_skills: '', preferred_skills: '', allowed_branches: '', allowed_grad_years: '',
+  required_degree: '', min_cgpa: '', min_tenth: '', min_twelfth: '', max_backlogs: '', deadline: '',
+}
+
+export default function Jobs() {
+  const { data, loading, error, refetch } = useFetch('/jds')
+  const { hasRole } = useAuth()
+  const toast = useToast()
+  const nav = useNavigate()
+  const [modal, setModal] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState(BLANK)
+  const [busy, setBusy] = useState(false)
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+
+  const saveJob = async () => {
+    if (!form.title.trim()) return toast.error('Job title is required')
+    setBusy(true)
+    try {
+      const payload = {
+        ...form,
+        required_skills: typeof form.required_skills === 'string' ? splitList(form.required_skills) : form.required_skills,
+        preferred_skills: typeof form.preferred_skills === 'string' ? splitList(form.preferred_skills) : form.preferred_skills,
+        allowed_branches: typeof form.allowed_branches === 'string' ? splitList(form.allowed_branches) : form.allowed_branches,
+        allowed_grad_years: typeof form.allowed_grad_years === 'string' ? splitList(form.allowed_grad_years) : form.allowed_grad_years,
+      }
+      
+      let job;
+      if (editId) {
+        job = await apiPut(`/jds/${editId}`, payload)
+        toast.success('Job updated')
+        refetch()
+        setModal(false)
+      } else {
+        job = await apiPost('/jds', payload)
+        toast.success('Job created')
+        setModal(false)
+        setForm(BLANK)
+        nav(`/app/jobs/${job.id}`)
+      }
+    } catch (e) { toast.error(e.message) } finally { setBusy(false) }
+  }
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation()
+    if (!window.confirm('Are you sure you want to delete this job?')) return
+    try {
+      await apiDelete(`/jds/${id}`)
+      toast.success('Job deleted')
+      refetch()
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
+  const handleEdit = (e, job) => {
+    e.stopPropagation()
+    setForm({
+      ...job,
+      ctc_min: job.ctc_min ?? '',
+      ctc_max: job.ctc_max ?? '',
+      experience_min: job.experience_min ?? '',
+      min_cgpa: job.min_cgpa ?? '',
+      min_tenth: job.min_tenth ?? '',
+      min_twelfth: job.min_twelfth ?? '',
+      max_backlogs: job.max_backlogs ?? '',
+      deadline: job.deadline ? job.deadline.substring(0, 10) : '',
+      required_skills: (job.required_skills || []).join('; '),
+      preferred_skills: (job.preferred_skills || []).join('; '),
+      allowed_branches: (job.allowed_branches || []).join('; '),
+      allowed_grad_years: (job.allowed_grad_years || []).join('; '),
+    })
+    setEditId(job.id)
+    setModal(true)
+  }
+
+  if (loading) return <LoadingSpinner />
+  if (error) return <ErrorState message={error} onRetry={refetch} />
+  const stats = data?.stats || {}
+
+  return (
+    <div>
+      <PageHeader title="Jobs / Job Descriptions" subtitle="Create JDs, publish to Careers, and assign to colleges." icon={Briefcase}
+        actions={hasRole('ADMIN') && <button className="btn-primary" onClick={() => { setEditId(null); setForm(BLANK); setModal(true); }}><Plus size={16} /> Create JD</button>} />
+
+      <div className="grid-stats mb-4">
+        <StatCard icon={Briefcase} label="Total JDs" value={stats.total ?? 0} tone="brand" />
+        <StatCard icon={Send} label="Published" value={stats.published ?? 0} tone="green" />
+        <StatCard icon={Briefcase} label="Drafts" value={stats.draft ?? 0} tone="amber" />
+        <StatCard icon={Globe} label="On Careers" value={stats.on_careers ?? 0} tone="violet" />
+      </div>
+
+      {(data?.items || []).length === 0 ? (
+        <EmptyState icon={Briefcase} title="No jobs yet" message="Create your first job description to begin hiring." />
+      ) : (
+        <div className="card" style={{ padding: 0 }}>
+          <table className="data">
+            <thead><tr><th>Title</th><th>Company</th><th>Status</th><th>Careers</th><th>Apps</th><th>Deadline</th>{hasRole('ADMIN') && <th>Actions</th>}</tr></thead>
+            <tbody>
+              {data.items.map((j) => (
+                <tr key={j.id} style={{ cursor: 'pointer' }} onClick={() => nav(`/app/jobs/${j.id}`)}>
+                  <td><strong>{j.title}</strong></td>
+                  <td className="muted">{j.company || '—'}</td>
+                  <td><Badge variant={j.status === 'Published' ? 'badge-green' : j.status === 'Closed' ? 'badge-red' : 'badge-gray'}>{j.status}</Badge></td>
+                  <td>{j.published_to_careers ? <Badge variant="badge-violet">Live</Badge> : <span className="muted">—</span>}</td>
+                  <td>{j.application_count}</td>
+                  <td className="muted">{j.deadline ? fmtDate(j.deadline) : '—'}</td>
+                  {hasRole('ADMIN') && (
+                    <td>
+                      <div className="flex gap-2">
+                        <button className="icon-btn" onClick={(e) => handleEdit(e, j)} title="Edit"><Pencil size={16} /></button>
+                        <button className="icon-btn" style={{ color: 'var(--red-500)' }} onClick={(e) => handleDelete(e, j.id)} title="Delete"><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Modal open={modal} onClose={() => setModal(false)} title={editId ? "Edit Job Description" : "Create Job Description"} width={640}
+        footer={<><button className="btn-ghost" onClick={() => setModal(false)}>Cancel</button>
+          <button className="btn-primary" onClick={saveJob} disabled={busy}>{busy ? 'Saving…' : (editId ? 'Save Changes' : 'Create JD')}</button></>}>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 2 }}><label>Job title *</label><input className="input" value={form.title || ''} onChange={set('title')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Company</label><input className="input" value={form.company || ''} onChange={set('company')} /></div>
+        </div>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}><label>Department</label><input className="input" value={form.department || ''} onChange={set('department')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Location</label><input className="input" value={form.location || ''} onChange={set('location')} /></div>
+          <div className="field" style={{ width: 130 }}><label>Type</label>
+            <select className="select" value={form.employment_type || ''} onChange={set('employment_type')}>
+              <option>Full-time</option><option>Internship</option><option>Contract</option></select></div>
+        </div>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}><label>CTC min (LPA)</label><input className="input" type="number" value={form.ctc_min || ''} onChange={set('ctc_min')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>CTC max (LPA)</label><input className="input" type="number" value={form.ctc_max || ''} onChange={set('ctc_max')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Min experience (yrs)</label><input className="input" type="number" value={form.experience_min || ''} onChange={set('experience_min')} /></div>
+          <div className="field" style={{ width: 100 }}><label>Openings</label><input className="input" type="number" value={form.openings || ''} onChange={set('openings')} /></div>
+        </div>
+        <div className="field"><label>Description</label><textarea className="input" rows={3} value={form.description || ''} onChange={set('description')} /></div>
+        <div className="field"><label>Required skills (semicolon separated)</label><input className="input" value={form.required_skills || ''} onChange={set('required_skills')} placeholder="Python; SQL; React" /></div>
+        <div className="field"><label>Preferred skills</label><input className="input" value={form.preferred_skills || ''} onChange={set('preferred_skills')} placeholder="Docker; AWS" /></div>
+
+        <div className="divider" /><h4 className="mb-4">Eligibility rules (campus)</h4>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}><label>Allowed branches</label><input className="input" value={form.allowed_branches || ''} onChange={set('allowed_branches')} placeholder="Computer Science; IT" /></div>
+          <div className="field" style={{ flex: 1 }}><label>Allowed grad years</label><input className="input" value={form.allowed_grad_years || ''} onChange={set('allowed_grad_years')} placeholder="2025; 2026" /></div>
+        </div>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}><label>Required degree</label><input className="input" value={form.required_degree || ''} onChange={set('required_degree')} placeholder="B.Tech" /></div>
+          <div className="field" style={{ flex: 1 }}><label>Min CGPA</label><input className="input" type="number" step="0.1" min="0" max="10" value={form.min_cgpa || ''} onChange={set('min_cgpa')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Max backlogs</label><input className="input" type="number" value={form.max_backlogs || ''} onChange={set('max_backlogs')} /></div>
+        </div>
+        <div className="flex" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}><label>Min 10th %</label><input className="input" type="number" step="0.1" min="0" max="100" value={form.min_tenth || ''} onChange={set('min_tenth')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Min 12th %</label><input className="input" type="number" step="0.1" min="0" max="100" value={form.min_twelfth || ''} onChange={set('min_twelfth')} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Deadline</label><input className="input" type="date" value={form.deadline || ''} onChange={set('deadline')} /></div>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+function splitList(s) {
+  return (s || '').split(/[;,]/).map((x) => x.trim()).filter(Boolean)
+}
