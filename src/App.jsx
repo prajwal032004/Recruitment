@@ -9,6 +9,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Unauthorized from './pages/Unauthorized'
 import CollegeLogin from './pages/CollegeLogin'
+import InterviewerLogin from './pages/InterviewerLogin'
 
 import Careers from './pages/public/Careers'
 import CareerDetail from './pages/public/CareerDetail'
@@ -68,7 +69,7 @@ export default function App() {
       <Route path="/careers" element={<Careers />} />
       <Route path="/careers/:jid" element={<CareerDetail />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/interviewer/login" element={<Login />} />
+      <Route path="/interviewer/login" element={<InterviewerLogin />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
