@@ -11,7 +11,7 @@ export default function PublicHeader() {
   return (
     <header className="mpc-header">
       <div className="mpc-header-container">
-        <Link to="/careers" className="mpc-logo">
+        <Link to="/" className="mpc-logo">
           <span className="mpc-logo-text">MPC</span>
           <span className="mpc-logo-sub">CLOUD CONSULTING</span>
         </Link>

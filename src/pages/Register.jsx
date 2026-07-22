@@ -35,7 +35,7 @@ export default function Register() {
       </div>
       <div className="mpc-auth-right fade-in">
         <div className="mpc-auth-card">
-          <Link to="/careers" className="mpc-logo" style={{ marginBottom: 40 }}>
+          <Link to="/" className="mpc-logo" style={{ marginBottom: 40 }}>
             <span className="mpc-logo-text">MPC</span>
             <span className="mpc-logo-sub">CLOUD CONSULTING</span>
           </Link>

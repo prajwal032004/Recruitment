@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, UserCog, Briefcase, Users, KanbanSquare,
   CalendarClock, BarChart3, ScrollText, ShieldCheck, Rocket, ClipboardList,
@@ -65,10 +65,10 @@ export default function DashboardLayout() {
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-brand" style={{ padding: '24px' }}>
-          <div className="mpc-logo" style={{ flexDirection: 'column' }}>
+          <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
             <span className="mpc-logo-text" style={{ fontSize: 24, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
             <span className="mpc-logo-sub" style={{ fontSize: 9, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 4 }}>CLOUD CONSULTING</span>
-          </div>
+          </Link>
           <button className="icon-btn mobile-only" onClick={() => setOpen(false)} style={{ marginLeft: 'auto' }}><X size={18} /></button>
         </div>
         <nav className="sidebar-nav">
