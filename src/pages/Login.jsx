@@ -69,9 +69,6 @@ export default function Login() {
             <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('admin@recruit.local'); setPassword('admin12345') }}>
               Admin
             </button>
-            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('prajwalbhandagi@gmail.com'); setPassword('password123') }}>
-              Candidate
-            </button>
           </div>
 
           <p className="muted" style={{ textAlign: 'center', fontSize: 13, fontWeight: 500 }}>
