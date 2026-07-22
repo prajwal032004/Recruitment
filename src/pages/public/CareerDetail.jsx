@@ -243,15 +243,58 @@ export default function CareerDetail() {
             </div>
 
             <div style={{ alignSelf: 'start', position: 'sticky', top: 96, background: '#fff', border: '1px solid var(--border)', padding: 32 }}>
-              <div className="flex mb-6" style={{ gap: 12, alignItems: 'center' }}>
-                <div style={{ padding: 10, background: '#c5307b', color: '#fff' }}>
-                  <Briefcase size={22} />
-                </div>
-                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#333' }}>Submit Application</h3>
-              </div>
+              {job?.already_applied ? (
+                <div>
+                  <div className="flex mb-4" style={{ gap: 12, alignItems: 'center' }}>
+                    <div style={{ padding: 10, background: '#10b981', color: '#fff', display: 'grid', placeItems: 'center' }}>
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: '#333', margin: 0 }}>Application Submitted</h3>
+                      <span style={{ fontSize: 12, color: '#10b981', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Stage: {job.my_application?.stage || 'Applied'}
+                      </span>
+                    </div>
+                  </div>
 
-              {(!user || user.role !== 'CANDIDATE') ? (
+                  <p className="muted mb-6" style={{ fontSize: 14, lineHeight: 1.6 }}>
+                    You have already applied for the <strong>{job.title}</strong> position. Your application is active in our recruitment system.
+                  </p>
+
+                  {job.my_application?.match_score != null && (
+                    <div style={{ background: '#f9f9f9', padding: '16px', border: '1px solid #eee', marginBottom: 20, textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: 12, color: '#555', fontWeight: 700, textTransform: 'uppercase' }}>Resume Match Score</p>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: '#c5307b', marginTop: 4 }}>{job.my_application.match_score}%</div>
+                    </div>
+                  )}
+
+                  {job.jd_document && (
+                    <div style={{ marginBottom: 16 }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setPdfModalOpen(true)} 
+                        className="mpc-btn" 
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', fontSize: 13 }}
+                      >
+                        <FileText size={16} /> View Official JD Document
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="stack" style={{ gap: 12 }}>
+                    <Link className="mpc-btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} to="/app/my-applications">
+                      View My Applications
+                    </Link>
+                  </div>
+                </div>
+              ) : (!user || user.role !== 'CANDIDATE') ? (
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div className="flex mb-6" style={{ gap: 12, alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ padding: 10, background: '#c5307b', color: '#fff' }}>
+                      <Briefcase size={22} />
+                    </div>
+                    <h3 style={{ fontSize: 20, fontWeight: 800, color: '#333', margin: 0 }}>Submit Application</h3>
+                  </div>
                   <p className="muted mb-6" style={{ fontSize: 15 }}>You must be logged in as a candidate to submit an application and upload your profile.</p>
                   <div className="stack" style={{ gap: 12 }}>
                     <Link className="mpc-btn" to="/login">Login to Apply</Link>
@@ -259,74 +302,82 @@ export default function CareerDetail() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={apply} className="stack" style={{ gap: 20 }}>
-                  
-                  {/* Profile Picture Cropper Trigger */}
-                  <div className="flex" style={{ flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <div style={{ 
-                      width: 100, height: 100, borderRadius: '50%', background: '#f9f9f9', 
-                      border: '2px dashed #ccc', display: 'grid', placeItems: 'center', overflow: 'hidden'
-                    }}>
-                      {croppedPreviewUrl ? (
-                        <img src={croppedPreviewUrl} alt="DP" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <UserIcon size={32} color="#999" />
-                      )}
+                <>
+                  <div className="flex mb-6" style={{ gap: 12, alignItems: 'center' }}>
+                    <div style={{ padding: 10, background: '#c5307b', color: '#fff' }}>
+                      <Briefcase size={22} />
                     </div>
-                    <div>
-                      <label style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12, padding: '8px 16px', border: '1px solid #ccc', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Upload size={14} /> 
-                        {croppedPreviewUrl ? 'Change Profile Picture' : 'Upload Professional Photo *'}
-                        <input type="file" hidden accept="image/*" onChange={onSelectFile} />
+                    <h3 style={{ fontSize: 20, fontWeight: 800, color: '#333' }}>Submit Application</h3>
+                  </div>
+                  <form onSubmit={apply} className="stack" style={{ gap: 20 }}>
+                    
+                    {/* Profile Picture Cropper Trigger */}
+                    <div className="flex" style={{ flexDirection: 'column', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                      <div style={{ 
+                        width: 100, height: 100, borderRadius: '50%', background: '#f9f9f9', 
+                        border: '2px dashed #ccc', display: 'grid', placeItems: 'center', overflow: 'hidden'
+                      }}>
+                        {croppedPreviewUrl ? (
+                          <img src={croppedPreviewUrl} alt="DP" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <UserIcon size={32} color="#999" />
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12, padding: '8px 16px', border: '1px solid #ccc', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Upload size={14} /> 
+                          {croppedPreviewUrl ? 'Change Profile Picture' : 'Upload Professional Photo *'}
+                          <input type="file" hidden accept="image/*" onChange={onSelectFile} />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Full name *</label>
+                      <input className="mpc-input" value={form.name} required onChange={setField('name')} placeholder="e.g. Jane Doe" />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Email address *</label>
+                      <input className="mpc-input" type="email" value={form.email} required onChange={setField('email')} placeholder="you@example.com" />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Phone number</label>
+                      <input className="mpc-input" value={form.phone} onChange={setField('phone')} placeholder="+1 (555) 000-0000" />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>College / University</label>
+                      <input className="mpc-input" value={form.college} onChange={setField('college')} placeholder="e.g. MIT" />
+                    </div>
+                    <div className="flex" style={{ gap: 12 }}>
+                      <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                        <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Branch / Major</label>
+                        <input className="mpc-input" value={form.branch} onChange={setField('branch')} placeholder="Computer Science" />
+                      </div>
+                      <div className="field" style={{ width: 120, marginBottom: 0 }}>
+                        <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Grad Year</label>
+                        <input className="mpc-input" value={form.graduation_year} onChange={setField('graduation_year')} placeholder="2024" />
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ display: 'block', fontSize: 12, textTransform: 'uppercase', fontWeight: 700, color: '#333', marginBottom: 8 }}>Resume Document (PDF or TXT) *</label>
+                      <label style={{ cursor: 'pointer', padding: '14px', border: '2px dashed #ccc', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#555', fontWeight: 600 }}>
+                        {file ? (
+                          <><FileText size={18} /> {file.name}</>
+                        ) : (
+                          <><Upload size={18} /> Click to Upload Resume</>
+                        )}
+                        <input type="file" hidden accept=".pdf,.txt" onChange={(e) => setFile(e.target.files[0])} />
                       </label>
                     </div>
-                  </div>
-
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Full name *</label>
-                    <input className="mpc-input" value={form.name} required onChange={setField('name')} placeholder="e.g. Jane Doe" />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Email address *</label>
-                    <input className="mpc-input" type="email" value={form.email} required onChange={setField('email')} placeholder="you@example.com" />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Phone number</label>
-                    <input className="mpc-input" value={form.phone} onChange={setField('phone')} placeholder="+1 (555) 000-0000" />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>College / University</label>
-                    <input className="mpc-input" value={form.college} onChange={setField('college')} placeholder="e.g. MIT" />
-                  </div>
-                  <div className="flex" style={{ gap: 12 }}>
-                    <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Branch / Major</label>
-                      <input className="mpc-input" value={form.branch} onChange={setField('branch')} placeholder="Computer Science" />
-                    </div>
-                    <div className="field" style={{ width: 120, marginBottom: 0 }}>
-                      <label style={{ color: '#333', fontSize: 12, textTransform: 'uppercase', fontWeight: 700 }}>Grad Year</label>
-                      <input className="mpc-input" value={form.graduation_year} onChange={setField('graduation_year')} placeholder="2024" />
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginTop: 8 }}>
-                    <label style={{ display: 'block', fontSize: 12, textTransform: 'uppercase', fontWeight: 700, color: '#333', marginBottom: 8 }}>Resume Document (PDF or TXT) *</label>
-                    <label style={{ cursor: 'pointer', padding: '14px', border: '2px dashed #ccc', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#555', fontWeight: 600 }}>
-                      {file ? (
-                        <><FileText size={18} /> {file.name}</>
-                      ) : (
-                        <><Upload size={18} /> Click to Upload Resume</>
-                      )}
-                      <input type="file" hidden accept=".pdf,.txt" onChange={(e) => setFile(e.target.files[0])} />
-                    </label>
-                  </div>
-                  
-                  <div className="divider" style={{ margin: '8px 0' }} />
-                  
-                  <button className="mpc-btn" disabled={busy}>
-                    {busy ? 'Submitting Application…' : 'Submit Application'}
-                  </button>
-                </form>
+                    
+                    <div className="divider" style={{ margin: '8px 0' }} />
+                    
+                    <button className="mpc-btn" disabled={busy}>
+                      {busy ? 'Submitting Application…' : 'Submit Application'}
+                    </button>
+                  </form>
+                </>
               )}
             </div>
           </div>

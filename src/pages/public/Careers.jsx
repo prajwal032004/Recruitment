@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CheckCircle2 } from 'lucide-react'
 import { useFetch } from '../../components/hooks'
 import { LoadingSpinner, ErrorState } from '../../components/UI'
 import PublicHeader from '../../components/PublicHeader'
@@ -59,9 +60,20 @@ export default function Careers() {
               <div className="mpc-job-title">{j.title}</div>
               <div className="mpc-job-exp">{j.experience_min ? `${j.experience_min}+ Years` : 'Fresher / Any'}</div>
               <div className="mpc-job-loc">{j.location || 'Remote'}</div>
-              <button className="btn mpc-btn-outline" onClick={() => nav(`/careers/${j.id}`)}>
-                APPLY NOW
-              </button>
+              {j.already_applied ? (
+                <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
+                  <span style={{ padding: '6px 12px', background: '#e0e7ff', color: '#3730a3', fontSize: 12, fontWeight: 700, borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle2 size={14} /> APPLIED
+                  </span>
+                  <button className="btn mpc-btn-outline" onClick={() => nav(`/careers/${j.id}`)}>
+                    VIEW DETAILS
+                  </button>
+                </div>
+              ) : (
+                <button className="btn mpc-btn-outline" onClick={() => nav(`/careers/${j.id}`)}>
+                  APPLY NOW
+                </button>
+              )}
             </div>
           ))}
         </section>
