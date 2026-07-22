@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserCheck, Plus } from 'lucide-react'
+import { UserCheck, Plus, ExternalLink } from 'lucide-react'
 import { useFetch } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, EmptyState, PageHeader, Modal, Badge, Avatar } from '../../components/UI'
 import { apiPost, apiPut } from '../../api/client'
@@ -43,7 +43,7 @@ export default function Interviewers() {
       ) : (
         <div className="card" style={{ padding: 0 }}>
           <table className="data">
-            <thead><tr><th>Name</th><th>Email</th><th>Specialization</th><th>Assigned</th><th>Pending Verdicts</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Specialization</th><th>Assigned</th><th>Pending Verdicts</th><th>Login Link</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {interviewers.map((u) => (
                 <tr key={u.id}>
@@ -52,6 +52,7 @@ export default function Interviewers() {
                   <td>{u.title || '—'}</td>
                   <td>{u.assigned_count || 0}</td>
                   <td>{u.pending_verdicts > 0 ? <Badge variant="badge-yellow">{u.pending_verdicts} Pending</Badge> : <span className="muted">0</span>}</td>
+                  <td><a className="link flex" style={{ gap: 4 }} href="/interviewer/login" target="_blank" rel="noreferrer">/interviewer/login <ExternalLink size={12} /></a></td>
                   <td><Badge variant={u.is_active ? 'badge-green' : 'badge-red'}>{u.is_active ? 'Active' : 'Disabled'}</Badge></td>
                   <td><button className="btn-ghost btn-sm" onClick={() => toggle(u)}>{u.is_active ? 'Disable' : 'Enable'}</button></td>
                 </tr>
