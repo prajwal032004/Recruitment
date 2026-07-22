@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Loader2, Inbox, AlertTriangle, X } from 'lucide-react'
 import { initials, avatarColor } from '../utils/helpers'
+import { baseURL } from '../api/client'
 
 /* ---------- Loading ---------- */
 export function LoadingSpinner({ label = 'Loading…', full }) {
@@ -51,9 +53,56 @@ export function ErrorState({ message = 'Could not load this data.', onRetry }) {
 }
 
 /* ---------- Avatar ---------- */
-export function Avatar({ name, size = 36 }) {
+export function Avatar({ name, src, profile_image, image, size = 36, style = {} }) {
+  const [imgErr, setImgErr] = useState(false)
+  const rawSrc = src || profile_image || image
+  let fullSrc = null
+
+  if (rawSrc && !imgErr) {
+    if (rawSrc.startsWith('http://') || rawSrc.startsWith('https://') || rawSrc.startsWith('data:')) {
+      fullSrc = rawSrc
+    } else {
+      fullSrc = `${baseURL}/files/${rawSrc.replace(/^\/+/, '')}`
+    }
+  }
+
+  if (fullSrc) {
+    return (
+      <img
+        src={fullSrc}
+        alt={name || 'Avatar'}
+        onError={() => setImgErr(true)}
+        className="avatar"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: '1px solid rgba(0,0,0,0.1)',
+          flexShrink: 0,
+          ...style
+        }}
+      />
+    )
+  }
+
   return (
-    <span className="avatar" style={{ width: size, height: size, background: avatarColor(name || ''), fontSize: size * 0.36 }}>
+    <span
+      className="avatar"
+      style={{
+        width: size,
+        height: size,
+        background: avatarColor(name || ''),
+        fontSize: size * 0.36,
+        display: 'inline-grid',
+        placeItems: 'center',
+        borderRadius: '50%',
+        color: '#ffffff',
+        fontWeight: 700,
+        flexShrink: 0,
+        ...style
+      }}
+    >
       {initials(name)}
     </span>
   )

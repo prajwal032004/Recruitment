@@ -126,7 +126,7 @@ export default function Candidates() {
                         onMouseLeave={() => setHoveredId(null)}
                         style={{ cursor: 'pointer', background: isHovered ? 'var(--surface-2)' : 'transparent', transition: 'background 0.15s ease' }}>
                         <td><div className="flex">
-                          {c.profile_image ? <img src={`${baseURL}/files/${c.profile_image}?token=${localStorage.getItem('hr_token')}`} alt="DP" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }} /> : <Avatar name={c.name} size={32} />}
+                          <Avatar name={c.name} src={c.profile_image} size={32} />
                           <div><div style={{ fontWeight: 600 }}>{c.name}</div><div className="muted" style={{ fontSize: 12 }}>{c.email}</div></div></div></td>
                         <td className="muted">{c.college_name || '—'}</td>
                         <td>{c.branch || '—'}</td>

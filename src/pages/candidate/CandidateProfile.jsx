@@ -271,7 +271,7 @@ export default function CandidateProfile() {
             <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto 16px' }}>
               <Avatar 
                 name={profile?.name} 
-                src={profile?.profile_image ? `${baseURL}/files/${profile.profile_image}` : null} 
+                src={profile?.profile_image} 
                 size={120} 
               />
               <label style={{ 

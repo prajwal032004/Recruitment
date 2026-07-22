@@ -94,7 +94,7 @@ export default function DashboardLayout() {
           <div className="flex wrap" style={{ gap: 12, alignItems: 'center', marginLeft: 'auto' }}>
             <NotificationBell />
             <div className="flex" style={{ gap: 8, alignItems: 'center', padding: '4px 10px', background: '#f1f5f9', borderRadius: 20, border: '1px solid #e2e8f0' }}>
-              <Avatar name={user?.name} size={28} />
+              <Avatar name={user?.name} src={user?.profile_image} size={28} />
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>{user?.name}</div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' }}>{user?.title || 'Interviewer'}</div>
@@ -156,7 +156,7 @@ export default function DashboardLayout() {
           <div className="flex wrap" style={{ gap: 12, alignItems: 'center', marginLeft: 'auto' }}>
             <NotificationBell />
             <div className="flex" style={{ gap: 8, alignItems: 'center', padding: '4px 10px', background: '#f1f5f9', borderRadius: 20, border: '1px solid #e2e8f0' }}>
-              <Avatar name={user?.name} size={28} />
+              <Avatar name={user?.name} src={user?.profile_image} size={28} />
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>{user?.name}</div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: '#c5307b', textTransform: 'uppercase' }}>Candidate</div>
@@ -205,7 +205,7 @@ export default function DashboardLayout() {
           <div className="topbar-right">
             <NotificationBell />
             <div className="topbar-user">
-              <Avatar name={user?.name} size={34} />
+              <Avatar name={user?.name} src={user?.profile_image} size={34} />
               <div className="tu-meta">
                 <div className="tu-name">{user?.name}</div>
                 <div className="tu-role">{user?.role}</div>

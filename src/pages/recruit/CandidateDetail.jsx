@@ -56,11 +56,7 @@ export default function CandidateDetail() {
   if (error) return <ErrorState message={error} onRetry={refetch} />
   if (!cand) return null
 
-  const avatarContent = cand.profile_image ? (
-    <img src={`${baseURL}/files/${cand.profile_image}?token=${localStorage.getItem('hr_token')}`} alt="DP" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
-  ) : (
-    <Avatar name={cand.name} size={80} style={{ fontSize: 24 }} />
-  )
+  const avatarContent = <Avatar name={cand.name} src={cand.profile_image} size={80} />
 
   return (
     <div className="fade-in">

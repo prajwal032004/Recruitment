@@ -112,7 +112,7 @@ export default function Applications() {
                         style={{ cursor: 'pointer', background: isHovered ? 'var(--surface-2)' : 'transparent', transition: 'background 0.15s ease' }}>
                         <td>
                           <div className="flex">
-                            {app.candidate_image ? <img src={`${baseURL}/files/${app.candidate_image}?token=${localStorage.getItem('hr_token')}`} alt="DP" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }} /> : <Avatar name={app.candidate_name || '—'} size={32} />}
+                            <Avatar name={app.candidate_name || '—'} src={app.candidate_image} size={32} />
                             <div>
                               <div style={{ fontWeight: 600 }}>{app.candidate_name || '—'}</div>
                               <div className="muted" style={{ fontSize: 12 }}>{app.candidate_email || app.candidate_phone || '—'}</div>
