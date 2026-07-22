@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Building2, Plus, Users, Briefcase, ExternalLink, Search, MessageSquare } from 'lucide-react'
+import { Building2, Plus, Users, Briefcase, ExternalLink, Search, MessageSquare, Upload, Download } from 'lucide-react'
 import { useFetch } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, EmptyState, StatCard, PageHeader, Modal, Badge } from '../../components/UI'
-import { apiPost, apiPut } from '../../api/client'
+import api, { apiPost, apiPut, baseURL } from '../../api/client'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -16,6 +16,11 @@ export default function Colleges() {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(BLANK)
   const [busy, setBusy] = useState(false)
+
+  const [importModal, setImportModal] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [validation, setValidation] = useState(null)
+
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   const open = (c) => { setForm(c ? { ...BLANK, ...c } : BLANK); setModal(c ? 'edit' : 'new') }
@@ -41,6 +46,28 @@ export default function Colleges() {
     } catch (e) { toast.error(e.message) } finally { setBusy(false) }
   }
 
+  const runValidate = async (file) => {
+    setImportFile(file)
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const res = await api.post('/admin/colleges/import/validate', fd, { headers: { 'Content-Type': undefined } })
+      setValidation(res.data?.data)
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const commitImport = async () => {
+    setBusy(true)
+    try {
+      const res = await apiPost('/admin/colleges/import/commit', { valid_rows: validation.valid_rows, filename: importFile?.name })
+      toast.success(res.message || 'Imported')
+      setImportModal(false)
+      setValidation(null)
+      setImportFile(null)
+      refetch()
+    } catch (e) { toast.error(e.message) } finally { setBusy(false) }
+  }
+
   if (loading) return <LoadingSpinner />
   if (error) return <ErrorState message={error} onRetry={refetch} />
   const stats = data?.stats || {}
@@ -49,7 +76,19 @@ export default function Colleges() {
   return (
     <div>
       <PageHeader title="Colleges" subtitle="Master college list and placement portals." icon={Building2}
-        actions={hasRole('ADMIN') && <button className="btn-primary" onClick={() => open(null)}><Plus size={16} /> Add College</button>} />
+        actions={hasRole('ADMIN') && (
+          <div className="flex" style={{ gap: 8 }}>
+            <a className="btn-soft btn-sm flex" href={`${baseURL}/templates/colleges`} download>
+              <Download size={14} /> Template
+            </a>
+            <button className="btn-soft btn-sm flex" onClick={() => setImportModal(true)}>
+              <Upload size={14} /> Import CSV
+            </button>
+            <button className="btn-primary btn-sm flex" onClick={() => open(null)}>
+              <Plus size={14} /> Add College
+            </button>
+          </div>
+        )} />
 
       <div className="grid-stats mb-4">
         <StatCard icon={Building2} label="Colleges" value={stats.total ?? 0} tone="brand" />
@@ -139,6 +178,35 @@ export default function Colleges() {
           <label>Message *</label>
           <textarea className="input" rows={4} value={notifyMsg} onChange={(e) => setNotifyMsg(e.target.value)} placeholder="E.g. Please update your college portal with the latest placement statistics." />
         </div>
+      </Modal>
+
+      {/* Import Modal */}
+      <Modal open={importModal} onClose={() => { setImportModal(false); setValidation(null) }} title="Import Colleges" width={560}
+        footer={validation?.valid ? <><button className="btn-ghost" onClick={() => setValidation(null)}>Back</button>
+          <button className="btn-primary" onClick={commitImport} disabled={busy}>{busy ? 'Importing…' : `Import ${validation.valid_rows.length}`}</button></> : null}>
+        {!validation ? (
+          <div>
+            <p className="muted mb-4">Upload a CSV or Excel file containing college details. Download the sample template first to see the required columns.</p>
+            <label className="btn-soft btn-block" style={{ cursor: 'pointer' }}><Upload size={15} /> Choose file
+              <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={(e) => e.target.files[0] && runValidate(e.target.files[0])} /></label>
+          </div>
+        ) : (
+          <div>
+            <p className="mb-4">{validation.message}</p>
+            <div className="flex mb-4" style={{ gap: 8 }}>
+              <Badge variant="badge-green">{validation.valid_rows.length} valid</Badge>
+              <Badge variant="badge-red">{validation.invalid_rows.length} invalid</Badge>
+            </div>
+            {validation.invalid_rows.length > 0 && (
+              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                <table className="data">
+                  <thead><tr><th>Row</th><th>Error</th></tr></thead>
+                  <tbody>{validation.invalid_rows.map((e, i) => <tr key={i}><td>{e.row}</td><td className="muted">{e.error}</td></tr>)}</tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   )
