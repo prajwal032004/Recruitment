@@ -113,6 +113,68 @@ export default function DashboardLayout() {
     )
   }
 
+  if (user?.role === 'CANDIDATE') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+        <header style={{
+          background: '#ffffff',
+          borderBottom: '1px solid #e2e8f0',
+          padding: '12px 20px',
+          minHeight: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+        }}>
+          <div className="flex wrap" style={{ gap: 20, alignItems: 'center' }}>
+            <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
+              <span className="mpc-logo-text" style={{ fontSize: 20, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
+              <span className="mpc-logo-sub" style={{ fontSize: 8, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 2 }}>CLOUD CONSULTING</span>
+            </Link>
+            
+            <nav className="flex wrap" style={{ gap: 6 }}>
+              <NavLink to="/careers" className={({ isActive }) => `btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`} style={{ textDecoration: 'none', fontWeight: 600 }}>
+                Browse Jobs
+              </NavLink>
+              <NavLink to="/app/my-applications" className={({ isActive }) => `btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`} style={{ textDecoration: 'none', fontWeight: 600 }}>
+                My Applications
+              </NavLink>
+              <NavLink to="/app/my-profile" className={({ isActive }) => `btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`} style={{ textDecoration: 'none', fontWeight: 600 }}>
+                My Profile
+              </NavLink>
+              <NavLink to="/app/policy-assistant" className={({ isActive }) => `btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`} style={{ textDecoration: 'none', fontWeight: 600 }}>
+                HR Policy Assistant
+              </NavLink>
+            </nav>
+          </div>
+
+          <div className="flex wrap" style={{ gap: 12, alignItems: 'center', marginLeft: 'auto' }}>
+            <NotificationBell />
+            <div className="flex" style={{ gap: 8, alignItems: 'center', padding: '4px 10px', background: '#f1f5f9', borderRadius: 20, border: '1px solid #e2e8f0' }}>
+              <Avatar name={user?.name} size={28} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>{user?.name}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#c5307b', textTransform: 'uppercase' }}>Candidate</div>
+              </div>
+            </div>
+            <button onClick={doLogout} className="btn-ghost btn-sm flex" style={{ gap: 4, color: '#ef4444', fontWeight: 600, padding: '4px 10px' }}>
+              <LogOut size={15} /> <span>Sign out</span>
+            </button>
+          </div>
+        </header>
+
+        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 16px' }}>
+          <Outlet />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
