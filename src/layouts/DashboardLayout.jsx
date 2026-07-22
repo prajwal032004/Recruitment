@@ -67,44 +67,46 @@ export default function DashboardLayout() {
         <header style={{
           background: '#ffffff',
           borderBottom: '1px solid #e2e8f0',
-          padding: '0 32px',
-          height: 68,
+          padding: '12px 20px',
+          minHeight: 64,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
           position: 'sticky',
           top: 0,
           zIndex: 100,
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex" style={{ gap: 24, alignItems: 'center' }}>
+          <div className="flex wrap" style={{ gap: 16, alignItems: 'center' }}>
             <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
-              <span className="mpc-logo-text" style={{ fontSize: 22, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
+              <span className="mpc-logo-text" style={{ fontSize: 20, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
               <span className="mpc-logo-sub" style={{ fontSize: 8, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 2 }}>CLOUD CONSULTING</span>
             </Link>
-            <div style={{ height: 28, width: 1, background: '#cbd5e1' }} />
+            <div style={{ height: 24, width: 1, background: '#cbd5e1' }} />
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Interviewer Workspace</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Assigned Candidate Evaluations</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Interviewer Workspace</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Assigned Evaluations</div>
             </div>
           </div>
 
-          <div className="flex" style={{ gap: 20, alignItems: 'center' }}>
+          <div className="flex wrap" style={{ gap: 12, alignItems: 'center', marginLeft: 'auto' }}>
             <NotificationBell />
-            <div className="flex" style={{ gap: 10, alignItems: 'center', padding: '6px 14px', background: '#f1f5f9', borderRadius: 20, border: '1px solid #e2e8f0' }}>
-              <Avatar name={user?.name} size={30} />
+            <div className="flex" style={{ gap: 8, alignItems: 'center', padding: '4px 10px', background: '#f1f5f9', borderRadius: 20, border: '1px solid #e2e8f0' }}>
+              <Avatar name={user?.name} size={28} />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>{user?.name}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' }}>{user?.title || 'Interviewer'}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>{user?.name}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' }}>{user?.title || 'Interviewer'}</div>
               </div>
             </div>
-            <button onClick={doLogout} className="btn-ghost btn-sm flex" style={{ gap: 6, color: '#ef4444', fontWeight: 600 }}>
-              <LogOut size={16} /> Sign out
+            <button onClick={doLogout} className="btn-ghost btn-sm flex" style={{ gap: 4, color: '#ef4444', fontWeight: 600, padding: '4px 10px' }}>
+              <LogOut size={15} /> <span>Sign out</span>
             </button>
           </div>
         </header>
 
-        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
+        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 16px' }}>
           <Outlet />
         </main>
       </div>
