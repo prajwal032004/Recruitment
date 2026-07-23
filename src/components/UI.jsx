@@ -146,19 +146,23 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
 /* ---------- Page header ---------- */
 export function PageHeader({ title, subtitle, actions, icon: Icon }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', gap: 13, alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
         {Icon && (
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--brand-gradient)', display: 'grid', placeItems: 'center', color: '#fff', flex: 'none', boxShadow: '0 4px 12px rgba(99,102,241,.3)' }}>
-            <Icon size={21} />
+          <div style={{
+            width: 46, height: 46, borderRadius: 14, background: 'var(--brand-gradient)',
+            display: 'grid', placeItems: 'center', color: '#fff', flex: 'none',
+            boxShadow: '0 8px 20px rgba(197, 48, 123, 0.25)'
+          }}>
+            <Icon size={22} />
           </div>
         )}
         <div>
-          <h1 className="h1">{title}</h1>
-          {subtitle && <div className="muted" style={{ fontSize: 13.5, marginTop: 2 }}>{subtitle}</div>}
+          <h1 className="h1" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</h1>
+          {subtitle && <div className="muted" style={{ fontSize: 13.5, marginTop: 3 }}>{subtitle}</div>}
         </div>
       </div>
-      {actions && <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>{actions}</div>}
+      {actions && <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>{actions}</div>}
     </div>
   )
 }
@@ -166,24 +170,31 @@ export function PageHeader({ title, subtitle, actions, icon: Icon }) {
 /* ---------- Stat card ---------- */
 export function StatCard({ icon: Icon, label, value, sub, tone = 'brand', trend }) {
   const tones = {
-    brand:  ['var(--brand-50)', 'var(--brand-600)'],
-    green:  ['var(--green-50)', 'var(--green-700)'],
-    amber:  ['var(--amber-50)', 'var(--amber-700)'],
-    red:    ['var(--red-50)', 'var(--red-700)'],
-    blue:   ['var(--blue-50)', 'var(--blue-700)'],
-    violet: ['var(--violet-50)', 'var(--violet-700)'],
+    brand:  ['#fdf2f8', '#c5307b', '#fbcfe8'],
+    green:  ['#ecfdf5', '#059669', '#a7f3d0'],
+    amber:  ['#fffbeb', '#d97706', '#fde68a'],
+    red:    ['#fef2f2', '#dc2626', '#fecaca'],
+    blue:   ['#eff6ff', '#2563eb', '#bfdbfe'],
+    violet: ['#f5f3ff', '#7c3aed', '#ddd6fe'],
   }
-  const [bg, fg] = tones[tone] || tones.brand
+  const [bg, fg, border] = tones[tone] || tones.brand
   return (
-    <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="eyebrow">{label}</span>
-        {Icon && <span style={{ width: 34, height: 34, borderRadius: 10, background: bg, color: fg, display: 'grid', placeItems: 'center' }}><Icon size={17} /></span>}
+        <span className="eyebrow" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-3)' }}>{label}</span>
+        {Icon && (
+          <span style={{
+            width: 38, height: 38, borderRadius: 11, background: bg, color: fg,
+            display: 'grid', placeItems: 'center', border: `1px solid ${border}`
+          }}>
+            <Icon size={18} />
+          </span>
+        )}
       </div>
       <div>
-        <div style={{ fontSize: 27, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</div>
-        {sub && <div className="muted" style={{ fontSize: 12.5, marginTop: 7 }}>{sub}</div>}
-        {trend && <div style={{ fontSize: 12, marginTop: 7, color: fg, fontWeight: 600 }}>{trend}</div>}
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)', lineHeight: 1 }}>{value}</div>
+        {sub && <div style={{ fontSize: 12.5, marginTop: 8, color: 'var(--text-2)', fontWeight: 500 }}>{sub}</div>}
+        {trend && <div style={{ fontSize: 12, marginTop: 8, color: fg, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{trend}</div>}
       </div>
     </div>
   )

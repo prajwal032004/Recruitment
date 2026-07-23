@@ -1,4 +1,4 @@
-import { Users, Briefcase, Building2, CalendarClock, Award, GraduationCap, FileText, TrendingUp, ArrowRight } from 'lucide-react'
+import { Users, Briefcase, Building2, CalendarClock, Award, GraduationCap, FileText, TrendingUp, ArrowRight, UserRoundCheck } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
 import { useFetch, CHART_COLORS } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, StatCard, PageHeader, EmptyState, Badge } from '../../components/UI'
@@ -12,7 +12,44 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <PageHeader title="Executive Dashboard" subtitle="Live recruitment overview across all sources and colleges." icon={TrendingUp} />
+      <PageHeader title="Executive & HR Command Center" subtitle="Unified workspace for recruitment, workforce onboarding, training compliance, and employee operations." icon={TrendingUp} />
+
+      {/* HR Command Center Quick Hub */}
+      <div className="card mb-6" style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%)', border: '1px solid #fbcfe8' }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--brand-700)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+          ⚡ HR Workspace Quick Actions & Tools
+        </div>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          <a href="/app/joined" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
+            <UserRoundCheck size={18} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Joined Candidates</div>
+              <div className="muted" style={{ fontSize: 11 }}>Convert & Manage Undos</div>
+            </div>
+          </a>
+          <a href="/app/employees" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
+            <Users size={18} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Employee Directory</div>
+              <div className="muted" style={{ fontSize: 11 }}>Credentials & Identities</div>
+            </div>
+          </a>
+          <a href="/app/training-hub" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
+            <Award size={18} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Training Management</div>
+              <div className="muted" style={{ fontSize: 11 }}>Courses, Rules & Compliance</div>
+            </div>
+          </a>
+          <a href="/app/policy-assistant" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
+            <FileText size={18} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Policy Storage</div>
+              <div className="muted" style={{ fontSize: 11 }}>RAG AI Assistant</div>
+            </div>
+          </a>
+        </div>
+      </div>
 
       <div className="grid-stats mb-4">
         <StatCard icon={Users} label="Candidates" value={k.candidates ?? 0} tone="brand" />

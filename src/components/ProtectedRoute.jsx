@@ -7,7 +7,13 @@ export default function ProtectedRoute({ children, roles }) {
   const location = useLocation()
 
   if (loading) return <LoadingSpinner full label="Checking your session…" />
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
+  if (!user) {
+    const lastEmp = localStorage.getItem('last_emp_code')
+    if (lastEmp && location.pathname.includes('my-trainings')) {
+      return <Navigate to={`/emp/${lastEmp}`} state={{ from: location }} replace />
+    }
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
   if (roles && !roles.includes(user.role)) return <Navigate to="/unauthorized" replace />
   return children
 }

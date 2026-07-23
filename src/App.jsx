@@ -48,6 +48,15 @@ import CollegeScorecard from './pages/college/CollegeScorecard'
 import CandidateProfile from './pages/candidate/CandidateProfile'
 import MyApplications from './pages/candidate/MyApplications'
 
+import Employees from './pages/hr/Employees'
+import TrainingHub from './pages/hr/TrainingHub'
+import TrainingCourses from './pages/hr/TrainingCourses'
+import AssignmentRules from './pages/hr/AssignmentRules'
+import TrainingCompliance from './pages/hr/TrainingCompliance'
+import MyTrainings from './pages/employee/MyTrainings'
+import ProctoredExamRoom from './pages/employee/ProctoredExamRoom'
+import EmployeePortalLogin from './pages/EmployeePortalLogin'
+
 function RoleHome() {
   const { user, loading } = useAuth()
   if (loading) return <LoadingSpinner full />
@@ -55,6 +64,7 @@ function RoleHome() {
   if (user.role === 'PLACEMENT_OFFICER' && user.college_slug) return <Navigate to={`/${user.college_slug}`} replace />
   if (user.role === 'CANDIDATE') return <Navigate to="/app/my-applications" replace />
   if (user.role === 'INTERVIEWER') return <Navigate to="/app/my-interviews" replace />
+  if (user.role === 'EMPLOYEE') return <Navigate to="/app/my-trainings" replace />
   if (user.role === 'HR') return <Navigate to="/app/pipeline" replace />
   return <Navigate to="/app/dashboard" replace />
 }
@@ -69,6 +79,8 @@ export default function App() {
       <Route path="/careers" element={<Careers />} />
       <Route path="/careers/:jid" element={<CareerDetail />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/emp/:empCode" element={<EmployeePortalLogin />} />
+      <Route path="/:empCode/login" element={<EmployeePortalLogin />} />
       <Route path="/interviewer/login" element={<InterviewerLogin />} />
       <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
@@ -91,6 +103,13 @@ export default function App() {
         <Route path="my-interviews" element={<MyInterviews />} />
         <Route path="analytics" element={<ProtectedRoute roles={STAFF}><Analytics /></ProtectedRoute>} />
         <Route path="joined" element={<ProtectedRoute roles={STAFF}><Joined /></ProtectedRoute>} />
+        <Route path="employees" element={<ProtectedRoute roles={STAFF}><Employees /></ProtectedRoute>} />
+        <Route path="training-hub" element={<ProtectedRoute roles={STAFF}><TrainingHub /></ProtectedRoute>} />
+        <Route path="training-courses" element={<Navigate to="/app/training-hub" replace />} />
+        <Route path="assignment-rules" element={<Navigate to="/app/training-hub" replace />} />
+        <Route path="training-compliance" element={<Navigate to="/app/training-hub" replace />} />
+        <Route path="my-trainings" element={<ProtectedRoute roles={['EMPLOYEE', 'ADMIN', 'HR']}><MyTrainings /></ProtectedRoute>} />
+        <Route path="exam/:aid" element={<ProtectedRoute roles={['EMPLOYEE', 'ADMIN', 'HR']}><ProctoredExamRoom /></ProtectedRoute>} />
         <Route path="policy-assistant" element={<ProtectedRoute roles={['ADMIN', 'HR', 'CANDIDATE']}><PolicyAssistant /></ProtectedRoute>} />
         <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="audit" element={<ProtectedRoute roles={['ADMIN']}><Audit /></ProtectedRoute>} />

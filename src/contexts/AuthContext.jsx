@@ -54,6 +54,15 @@ export function AuthProvider({ children }) {
     return data
   }, [])
 
+  const loginWithSession = useCallback((token, u) => {
+    localStorage.setItem('hr_token', token)
+    localStorage.setItem('hr_user', JSON.stringify(u))
+    if (u?.employee_code) {
+      localStorage.setItem('last_emp_code', u.employee_code)
+    }
+    setUser(u)
+  }, [])
+
   const logout = useCallback(() => {
     localStorage.removeItem('hr_token')
     localStorage.removeItem('hr_user')
@@ -64,7 +73,7 @@ export function AuthProvider({ children }) {
   const hasRole = useCallback((...roles) => user && roles.includes(user.role), [user])
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, collegeLogin, register, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, loading, login, collegeLogin, loginWithSession, register, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   )

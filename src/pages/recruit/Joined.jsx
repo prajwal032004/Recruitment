@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { UserRoundCheck, Download, Search, FileText, CalendarPlus, Award, Briefcase, X, ArrowRight, CheckCircle2, Clock } from 'lucide-react'
-import api, { baseURL, apiGet } from '../../api/client'
+import { UserRoundCheck, Download, Search, FileText, CalendarPlus, Award, Briefcase, X, ArrowRight, CheckCircle2, Clock, Undo2, UserCheck, ShieldCheck } from 'lucide-react'
+import api, { baseURL, apiGet, apiPost } from '../../api/client'
 import { useFetch } from '../../components/hooks'
-import { LoadingSpinner, ErrorState, EmptyState, PageHeader, StatCard, Badge, Avatar, Pagination } from '../../components/UI'
+import { LoadingSpinner, ErrorState, EmptyState, PageHeader, StatCard, Badge, Avatar, Pagination, Modal } from '../../components/UI'
+import { CredentialsModal } from '../../components/CredentialsModal'
 import { useToast } from '../../contexts/ToastContext'
 import { fmtDate } from '../../utils/helpers'
 
@@ -14,10 +15,16 @@ export default function Joined() {
   const [filters, setFilters] = useState({ search: '', job_id: '', college_id: '', source: '', page: 1 })
   const [exporting, setExporting] = useState(false)
   
-  // Master-Detail right side panel state
+  // Master-Detail right side panel / mobile modal state
   const [selectedAid, setSelectedAid] = useState(null)
   const [profile, setProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [mobileModal, setMobileModal] = useState(false)
+
+  // Credentials Modal State
+  const [credentials, setCredentials] = useState(null)
+  const [showCreds, setShowCreds] = useState(false)
+  const [busyAid, setBusyAid] = useState(null)
   
   const toast = useToast()
   
@@ -82,6 +89,9 @@ export default function Joined() {
   const openProfile = async (aid) => {
     setSelectedAid(aid)
     setProfileLoading(true)
+    if (window.innerWidth <= 1024) {
+      setMobileModal(true)
+    }
     try {
       const resData = await apiGet(`/joined/${aid}`)
       setProfile(resData)
@@ -92,12 +102,219 @@ export default function Joined() {
     }
   }
 
+  const convertToEmployee = async (aid) => {
+    setBusyAid(aid)
+    try {
+      const res = await apiPost(`/employees/from-candidate/${aid}`)
+      toast.success(res.message || 'Candidate converted to Employee successfully!')
+      if (res.data?.credentials || res.credentials) {
+        setCredentials(res.data?.credentials || res.credentials)
+        setShowCreds(true)
+      }
+      load()
+      if (selectedAid === aid) {
+        openProfile(aid)
+      }
+    } catch (e) {
+      toast.error(e.message || 'Failed to create employee record')
+    } finally {
+      setBusyAid(null)
+    }
+  }
+
+  const undoConversion = async (aid) => {
+    setBusyAid(aid)
+    try {
+      const res = await apiPost(`/employees/undo-conversion/${aid}`)
+      toast.success(res.message || 'Conversion undone successfully!')
+      load()
+      if (selectedAid === aid) {
+        openProfile(aid)
+      }
+    } catch (e) {
+      toast.error(e.message || 'Failed to undo conversion')
+    } finally {
+      setBusyAid(null)
+    }
+  }
+
   if (loading && !data) return <LoadingSpinner />
   if (error) return <ErrorState message={error} onRetry={load} />
 
   const stats = data?.stats || { total_joined: 0, by_source: {}, by_department: {} }
   const topSource = Object.entries(stats.by_source).sort((a,b) => b[1] - a[1])[0]
   const depts = Object.keys(stats.by_department).length
+
+  const renderProfileBody = () => {
+    if (profileLoading || !profile) {
+      return (
+        <div style={{ padding: '60px 0', textAlign: 'center' }}>
+          <LoadingSpinner label="Loading candidate profile..." />
+        </div>
+      )
+    }
+
+    const isEmp = profile.is_employee
+    const remainingUndos = profile.remaining_conversion_undos ?? 3
+    const canUndo = isEmp && remainingUndos > 0
+
+    return (
+      <div className="stack" style={{ gap: 24 }}>
+        {/* Panel Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div className="flex" style={{ gap: 16, alignItems: 'center' }}>
+            <Avatar name={profile.candidate.name} src={profile.candidate.profile_image} size={64} style={{ fontSize: 24 }} />
+            <div>
+              <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>{profile.candidate.name}</h2>
+              <div className="muted mt-1" style={{ fontSize: 13 }}>{profile.candidate.email}</div>
+              <div className="muted" style={{ fontSize: 12.5 }}>{profile.candidate.phone}</div>
+            </div>
+          </div>
+          <button 
+            className="icon-btn" 
+            onClick={() => { setSelectedAid(null); setProfile(null); setMobileModal(false); }}
+            title="Close Profile View"
+            style={{ padding: 6, borderRadius: 8 }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Badges row */}
+        <div className="flex wrap" style={{ gap: 8 }}>
+          <Badge variant="badge-blue" style={{ fontSize: 12, padding: '4px 12px' }}>Source: {profile.source}</Badge>
+          {profile.match_score != null && (
+            <Badge variant="badge-green" style={{ fontSize: 12, padding: '4px 12px' }}>{profile.match_score}% Match Score</Badge>
+          )}
+          {isEmp && (
+            <Badge variant="badge-violet" style={{ fontSize: 12, padding: '4px 12px' }}>
+              Employee Code: {profile.employee_code || 'Active'}
+            </Badge>
+          )}
+        </div>
+        
+        {/* Quick Info Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+          <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 12, border: '1px solid var(--border)' }}>
+            <div className="muted mb-1" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Applied Role & Department</div>
+            <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text)' }}>{profile.job?.title || 'General Application'}</div>
+            <div className="muted mt-1" style={{ fontSize: 13 }}>{profile.job?.company} {profile.job?.department ? `• ${profile.job.department}` : ''}</div>
+            <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 600, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={15} /> Joined on {fmtDate(profile.joined_at)}
+            </div>
+          </div>
+
+          {/* Action Buttons: Convert / Undo */}
+          {isEmp ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                padding: '12px 14px', background: '#f5f3ff', border: '1px solid #ddd6fe',
+                borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6d28d9', fontWeight: 700, fontSize: 13.5 }}>
+                  <UserCheck size={18} />
+                  <span>Employee Record Created</span>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, background: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: 20 }}>
+                  {remainingUndos}/3 Undos Left
+                </span>
+              </div>
+              {canUndo && (
+                <button
+                  className="btn-danger btn-block flex"
+                  style={{ gap: 6, justifyContent: 'center', padding: '10px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}
+                  disabled={busyAid === profile.application_id}
+                  onClick={() => undoConversion(profile.application_id)}
+                >
+                  <Undo2 size={16} /> <span>Undo Conversion ({remainingUndos} left)</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              className="btn-primary btn-block flex"
+              style={{ gap: 8, justifyContent: 'center', padding: '12px', borderRadius: 10, fontWeight: 700, fontSize: 13.5 }}
+              disabled={busyAid === profile.application_id}
+              onClick={() => convertToEmployee(profile.application_id)}
+            >
+              <UserCheck size={18} />
+              <span>Convert to Employee Record</span>
+            </button>
+          )}
+
+          <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 12, border: '1px solid var(--border)' }}>
+            <div className="muted mb-1" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Academic Background</div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{profile.candidate.college_name || 'No college listed'}</div>
+            <div className="muted mt-1" style={{ fontSize: 13 }}>
+              {profile.candidate.degree || 'Degree unspecified'} {profile.candidate.branch ? `(${profile.candidate.branch})` : ''}
+            </div>
+            {profile.candidate.graduation_year && (
+              <div className="muted mt-1" style={{ fontSize: 12 }}>Class of {profile.candidate.graduation_year}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Skills Chips */}
+        {profile.candidate.skills?.length > 0 && (
+          <div>
+            <h4 className="mb-2" style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)' }}>Skills & Expertise</h4>
+            <div className="flex wrap" style={{ gap: 6 }}>
+              {profile.candidate.skills.map(s => (
+                <span key={s} style={{ 
+                  padding: '4px 10px', background: 'var(--brand-50)', color: 'var(--brand-700)', 
+                  borderRadius: 20, fontSize: 12, fontWeight: 600, border: '1px solid var(--brand-100)' 
+                }}>
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Resume Action */}
+        {profile.candidate.resume_file ? (
+          <a 
+            className="btn-soft btn-block flex" 
+            href={`${baseURL}/files/${profile.candidate.resume_file}?token=${localStorage.getItem('hr_token')}`} 
+            target="_blank" 
+            rel="noreferrer" 
+            style={{ justifyContent: 'center', padding: '12px', borderRadius: 10, fontWeight: 700, fontSize: 13.5 }}
+          >
+            <FileText size={17} style={{ marginRight: 8 }} /> Open Resume Document
+          </a>
+        ) : (
+          <div className="muted text-center" style={{ padding: 14, background: 'var(--surface-2)', borderRadius: 10, fontSize: 13 }}>No resume on file</div>
+        )}
+
+        {/* Stage History Timeline */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+          <h4 className="mb-4" style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)' }}>Stage Progression</h4>
+          <div style={{ position: 'relative', paddingLeft: 6 }}>
+            <div style={{ position: 'absolute', left: 11, top: 8, bottom: 16, width: 2, background: 'var(--border)' }} />
+            {profile.history.map((h, i) => {
+              const isLatest = i === profile.history.length - 1
+              return (
+                <div key={h.id} className="mb-4" style={{ position: 'relative', paddingLeft: 24 }}>
+                  <div style={{ 
+                    position: 'absolute', left: 0, top: 3, width: 12, height: 12, borderRadius: '50%', 
+                    background: isLatest ? 'var(--green-500)' : 'var(--brand-400)', 
+                    border: '2px solid var(--surface)',
+                    boxShadow: isLatest ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : 'none'
+                  }} />
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: isLatest ? 'var(--text)' : 'var(--text-2)' }}>
+                    {h.from_stage ? `${h.from_stage} → ` : ''}{h.to_stage}
+                  </div>
+                  <div className="muted mt-1" style={{ fontSize: 11.5 }}>
+                    By {h.by} • {fmtDate(h.created_at)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -112,8 +329,25 @@ export default function Joined() {
         }
       />
 
+      {/* Credentials Modal Popup */}
+      <CredentialsModal
+        open={showCreds}
+        onClose={() => setShowCreds(false)}
+        credentials={credentials}
+      />
+
+      {/* Mobile Candidate Details Popup Modal */}
+      <Modal
+        open={mobileModal}
+        onClose={() => setMobileModal(false)}
+        title="Candidate Joined Profile"
+        width={560}
+      >
+        {renderProfileBody()}
+      </Modal>
+
       {/* Sleek Stats Row */}
-      <div className="grid-stats mb-6" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="grid-stats mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
         <StatCard 
           icon={UserRoundCheck}
           label="Total Joined" 
@@ -175,14 +409,15 @@ export default function Joined() {
                   <th style={{ padding: '14px 20px' }}>Candidate</th>
                   <th style={{ padding: '14px 16px' }}>College & Branch</th>
                   <th style={{ padding: '14px 16px' }}>Role</th>
-                  <th style={{ padding: '14px 16px' }}>Source</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Match</th>
+                  <th style={{ padding: '14px 16px' }}>Status / Action</th>
                   <th style={{ padding: '14px 20px', textAlign: 'right' }}>Joined Date</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map(c => {
                   const isSelected = selectedAid === c.application_id
+                  const isEmp = c.is_employee
+                  const remainingUndos = c.remaining_conversion_undos ?? 3
                   return (
                     <tr 
                       key={c.application_id} 
@@ -196,7 +431,7 @@ export default function Joined() {
                     >
                       <td style={{ padding: '16px 20px' }}>
                         <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-                          <Avatar name={c.name} size={40} />
+                          <Avatar name={c.name} src={c.profile_image} size={42} />
                           <div>
                             <div style={{ fontWeight: 700, fontSize: 14, color: isSelected ? 'var(--brand-700)' : 'var(--text)' }}>{c.name}</div>
                             <div className="muted" style={{ fontSize: 12.5 }}>{c.email}</div>
@@ -211,18 +446,32 @@ export default function Joined() {
                         <div style={{ fontWeight: 600, fontSize: 13.5 }}>{c.job_title}</div>
                         <div className="muted" style={{ fontSize: 12.5 }}>{c.department || c.company}</div>
                       </td>
-                      <td style={{ padding: '16px' }}>
-                        <Badge variant="badge-blue" style={{ fontSize: 11, padding: '3px 10px' }}>{c.source}</Badge>
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'center' }}>
-                        {c.match_score != null ? (
-                          <span style={{ 
-                            fontWeight: 700, fontSize: 13, color: '#059669', 
-                            background: '#ecfdf5', padding: '4px 10px', borderRadius: 20 
-                          }}>
-                            {c.match_score}%
-                          </span>
-                        ) : '—'}
+                      <td style={{ padding: '16px' }} onClick={(e) => e.stopPropagation()}>
+                        {isEmp ? (
+                          <div className="flex" style={{ gap: 6, alignItems: 'center' }}>
+                            <Badge variant="badge-violet" style={{ fontSize: 11 }}>Employee</Badge>
+                            {remainingUndos > 0 && (
+                              <button
+                                className="btn-ghost btn-sm flex"
+                                style={{ padding: '2px 8px', fontSize: 11, gap: 3, color: 'var(--red-600)' }}
+                                title={`Undo conversion (${remainingUndos} undos left)`}
+                                disabled={busyAid === c.application_id}
+                                onClick={() => undoConversion(c.application_id)}
+                              >
+                                <Undo2 size={12} /> <span>Undo ({remainingUndos})</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            className="btn-soft btn-sm flex"
+                            style={{ gap: 4, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}
+                            disabled={busyAid === c.application_id}
+                            onClick={() => convertToEmployee(c.application_id)}
+                          >
+                            <UserCheck size={14} /> <span>Convert</span>
+                          </button>
+                        )}
                       </td>
                       <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: 500, fontSize: 13, color: 'var(--text-2)' }}>
                         {c.joined_at ? fmtDate(c.joined_at) : '—'}
@@ -237,155 +486,10 @@ export default function Joined() {
             </div>
           </div>
 
-          {/* Right Column: Profile Side Panel */}
+          {/* Right Column: Profile Side Panel (Desktop only) */}
           {selectedAid && (
-            <div className="card" style={{ padding: '24px', position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '16px', boxShadow: 'var(--shadow-lg)' }}>
-              {profileLoading || !profile ? (
-                <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                  <LoadingSpinner label="Loading candidate profile..." />
-                </div>
-              ) : (
-                <div className="stack" style={{ gap: 24 }}>
-                  {/* Panel Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div className="flex" style={{ gap: 16, alignItems: 'center' }}>
-                      <Avatar name={profile.candidate.name} size={64} style={{ fontSize: 24 }} />
-                      <div>
-                        <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>{profile.candidate.name}</h2>
-                        <div className="muted mt-1" style={{ fontSize: 13 }}>{profile.candidate.email}</div>
-                        <div className="muted" style={{ fontSize: 12.5 }}>{profile.candidate.phone}</div>
-                      </div>
-                    </div>
-                    <button 
-                      className="icon-btn" 
-                      onClick={() => { setSelectedAid(null); setProfile(null) }}
-                      title="Close Profile View"
-                      style={{ padding: 6, borderRadius: 8 }}
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  {/* Badges row */}
-                  <div className="flex wrap" style={{ gap: 8 }}>
-                    <Badge variant="badge-blue" style={{ fontSize: 12, padding: '4px 12px' }}>Source: {profile.source}</Badge>
-                    {profile.match_score != null && (
-                      <Badge variant="badge-green" style={{ fontSize: 12, padding: '4px 12px' }}>{profile.match_score}% Match Score</Badge>
-                    )}
-                  </div>
-                  
-                  {/* Quick Info Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-                    <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                      <div className="muted mb-1" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Applied Role & Department</div>
-                      <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text)' }}>{profile.job?.title || 'General Application'}</div>
-                      <div className="muted mt-1" style={{ fontSize: 13 }}>{profile.job?.company} {profile.job?.department ? `• ${profile.job.department}` : ''}</div>
-                      <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 600, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={15} /> Joined on {fmtDate(profile.joined_at)}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                      <div className="muted mb-1" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Academic Background</div>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{profile.candidate.college_name || 'No college listed'}</div>
-                      <div className="muted mt-1" style={{ fontSize: 13 }}>
-                        {profile.candidate.degree || 'Degree unspecified'} {profile.candidate.branch ? `(${profile.candidate.branch})` : ''}
-                      </div>
-                      {profile.candidate.graduation_year && (
-                        <div className="muted mt-1" style={{ fontSize: 12 }}>Class of {profile.candidate.graduation_year}</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Skills Chips */}
-                  {profile.candidate.skills?.length > 0 && (
-                    <div>
-                      <h4 className="mb-2" style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)' }}>Skills & Expertise</h4>
-                      <div className="flex wrap" style={{ gap: 6 }}>
-                        {profile.candidate.skills.map(s => (
-                          <span key={s} style={{ 
-                            padding: '4px 10px', background: 'var(--brand-50)', color: 'var(--brand-700)', 
-                            borderRadius: 20, fontSize: 12, fontWeight: 600, border: '1px solid var(--brand-100)' 
-                          }}>
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Resume Action */}
-                  {profile.candidate.resume_file ? (
-                    <a 
-                      className="btn-soft btn-block" 
-                      href={`${baseURL}/files/${profile.candidate.resume_file}?token=${localStorage.getItem('hr_token')}`} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      style={{ justifyContent: 'center', padding: '12px', borderRadius: 10, fontWeight: 700, fontSize: 13.5 }}
-                    >
-                      <FileText size={17} style={{ marginRight: 8 }} /> Open Resume Document
-                    </a>
-                  ) : (
-                    <div className="muted text-center" style={{ padding: 14, background: 'var(--surface-2)', borderRadius: 10, fontSize: 13 }}>No resume on file</div>
-                  )}
-
-                  {/* Stage History Timeline */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                    <h4 className="mb-4" style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)' }}>Stage Progression</h4>
-                    <div style={{ position: 'relative', paddingLeft: 6 }}>
-                      <div style={{ position: 'absolute', left: 11, top: 8, bottom: 16, width: 2, background: 'var(--border)' }} />
-                      {profile.history.map((h, i) => {
-                        const isLatest = i === profile.history.length - 1
-                        return (
-                          <div key={h.id} className="mb-4" style={{ position: 'relative', paddingLeft: 24 }}>
-                            <div style={{ 
-                              position: 'absolute', left: 0, top: 3, width: 12, height: 12, borderRadius: '50%', 
-                              background: isLatest ? 'var(--green-500)' : 'var(--brand-400)', 
-                              border: '2px solid var(--surface)',
-                              boxShadow: isLatest ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : 'none'
-                            }} />
-                            <div style={{ fontWeight: 700, fontSize: 13.5, color: isLatest ? 'var(--text)' : 'var(--text-2)' }}>
-                              {h.from_stage ? `${h.from_stage} → ` : ''}{h.to_stage}
-                            </div>
-                            <div className="muted mt-1" style={{ fontSize: 11.5 }}>
-                              By {h.by} • {fmtDate(h.created_at)}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Interview Rounds */}
-                  {profile.interviews?.length > 0 && (
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                      <h4 className="mb-3" style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)' }}>Interview Rounds</h4>
-                      {profile.interviews.map(iv => (
-                        <div key={iv.id} className="mb-3" style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', background: 'var(--surface-2)' }}>
-                          <div className="row-between mb-2">
-                            <strong style={{ fontSize: 14, color: 'var(--text)' }}>{iv.round_name}</strong>
-                            <Badge variant={iv.result === 'Pass' ? 'badge-green' : iv.result === 'Fail' ? 'badge-red' : 'badge-amber'} style={{ fontSize: 11 }}>
-                              {iv.result}
-                            </Badge>
-                          </div>
-                          <div className="muted mb-2" style={{ fontSize: 12 }}>
-                            <Clock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> 
-                            {fmtDate(iv.scheduled_at)}
-                          </div>
-                          {(iv.feedback || []).map(fb => (
-                            <div key={fb.id} className="row-between mt-2" style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)' }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600 }}>{fb.interviewer_name}</span>
-                              <Badge variant={fb.verdict === 'Pass' ? 'badge-green' : fb.verdict === 'Fail' ? 'badge-red' : 'badge-amber'} style={{ padding: '2px 8px', fontSize: 11 }}>
-                                {fb.verdict || 'Pending'}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            <div className="card desktop-only" style={{ padding: '24px', position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '16px', boxShadow: 'var(--shadow-lg)' }}>
+              {renderProfileBody()}
             </div>
           )}
         </div>
