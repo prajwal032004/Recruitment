@@ -112,16 +112,9 @@ Note: Your username is pre-filled on your personal link. Simply enter your passw
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Personal Portal URL
+              Employee Code
             </span>
-            <strong style={{ color: '#a7f3d0' }}>{portalUrl}</strong>
-          </div>
-          <div style={{ height: 1, background: '#334155' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Username / Email
-            </span>
-            <strong style={{ color: '#38bdf8' }}>{username}</strong>
+            <strong style={{ color: '#38bdf8' }}>{employee_code || username}</strong>
           </div>
           <div style={{ height: 1, background: '#334155' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -129,7 +122,7 @@ Note: Your username is pre-filled on your personal link. Simply enter your passw
               Temporary Password
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <strong style={{ color: '#f472b6' }}>{showPw ? password : '••••••••••••'}</strong>
+              <strong style={{ color: '#f472b6' }}>{showPw ? (password || credentials?.temp_password) : '••••••••••••'}</strong>
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}

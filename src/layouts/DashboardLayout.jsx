@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, UserCog, Briefcase, Users, KanbanSquare,
   CalendarClock, BarChart3, ScrollText, ShieldCheck, Rocket, ClipboardList,
   LogOut, Menu, X, FileText, MessageSquareText, UserCheck, UserRoundCheck, TrendingUp,
-  GraduationCap, BookOpen, Sliders, Award
+  GraduationCap, BookOpen, Sliders, Award, Bell
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from '../components/UI'
@@ -48,7 +48,9 @@ const NAV = {
     { to: '/app/policy-assistant', label: 'HR Policy Storage', icon: MessageSquareText },
   ],
   EMPLOYEE: [
-    { to: '/app/my-trainings', label: 'My Trainings', icon: GraduationCap },
+    { to: '/app/my-profile', label: 'My Profile Details', icon: UserCog },
+    { to: '/app/notifications', label: 'Notifications', icon: Bell },
+    { to: '/app/policy-assistant', label: 'HR Policy Assistant', icon: MessageSquareText },
   ],
   CANDIDATE: [
     { to: '/app/my-profile', label: 'My Profile', icon: UserCog },

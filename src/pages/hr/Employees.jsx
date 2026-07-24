@@ -129,6 +129,16 @@ export default function Employees() {
     }
   }
 
+  const fetchAndShowCreds = async (emp) => {
+    try {
+      const res = await apiGet(`/employees/${emp.id}/credentials`)
+      setCredentials(res)
+      setShowCreds(true)
+    } catch (e) {
+      toast.error(e.message || 'Failed to fetch credentials')
+    }
+  }
+
   const openProfile = async (emp) => {
     setSelectedEmp(emp)
     setDetailModal(true)
@@ -136,7 +146,6 @@ export default function Employees() {
     try {
       const res = await apiGet(`/employees/${emp.id}`)
       setSelectedEmp(res)
-      setEmpHistory(res.training_history || [])
     } catch (e) {
       toast.error(e.message || 'Failed to load employee details')
     } finally {
@@ -153,8 +162,8 @@ export default function Employees() {
       />
 
       <PageHeader
-        title="Employees"
-        subtitle="Workforce directory, identity management, and training progression."
+        title="Employees Directory"
+        subtitle="Complete workforce records ledger, employee profile details, and credential management."
         icon={Users}
         actions={
           <div className="flex" style={{ gap: 8 }}>
@@ -417,91 +426,79 @@ export default function Employees() {
         )}
       </Modal>
 
-      {/* Employee Profile & Training History Modal */}
+      {/* Employee Profile Record Modal */}
       <Modal
         open={detailModal}
         onClose={() => setDetailModal(false)}
-        title={selectedEmp ? `${selectedEmp.name} — Profile & Training History` : "Employee Details"}
-        width={720}
-        footer={<button className="btn-ghost" onClick={() => setDetailModal(false)}>Close</button>}
+        title={selectedEmp ? `${selectedEmp.name} — Employee Record` : "Employee Record Details"}
+        width={680}
+        footer={
+          <div className="flex" style={{ justifyContent: 'space-between', width: '100%' }}>
+            {selectedEmp && (
+              <div className="flex" style={{ gap: 8 }}>
+                <button
+                  className="btn-soft btn-sm flex"
+                  style={{ gap: 6 }}
+                  onClick={() => { setDetailModal(false); fetchAndShowCreds(selectedEmp) }}
+                >
+                  <KeyRound size={14} /> <span>Get Login Credentials</span>
+                </button>
+                <button
+                  className="btn-secondary btn-sm flex"
+                  style={{ gap: 6 }}
+                  onClick={() => { setDetailModal(false); openEdit(selectedEmp) }}
+                >
+                  <span>Edit Record</span>
+                </button>
+              </div>
+            )}
+            <button className="btn-ghost btn-sm" onClick={() => setDetailModal(false)}>Close</button>
+          </div>
+        }
       >
         {selectedEmp && (
           <div>
-            {/* Quick Profile Summary */}
-            <div className="card mb-4" style={{ background: 'var(--surface-2)', padding: '16px' }}>
-              <div className="grid-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div className="card mb-4" style={{ background: 'var(--surface-2)', padding: '20px' }}>
+              <div className="flex" style={{ gap: 16, alignItems: 'center', marginBottom: 16 }}>
+                <Avatar name={selectedEmp.name} size={52} />
                 <div>
-                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Employee Code</div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{selectedEmp.employee_code}</div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{selectedEmp.name}</h3>
+                  <div className="flex" style={{ gap: 8, marginTop: 4 }}>
+                    <Badge variant={selectedEmp.status === 'Active' ? 'badge-green' : 'badge-gray'}>
+                      {selectedEmp.status || 'Active'}
+                    </Badge>
+                    <span className="muted" style={{ fontSize: 12.5 }}>Code: <strong>{selectedEmp.employee_code}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid-stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, fontSize: 13.5 }}>
+                <div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Email Address</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.email || '—'}</div>
                 </div>
                 <div>
-                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Designation & Dept</div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{selectedEmp.designation || 'N/A'} • {selectedEmp.department || 'N/A'}</div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Phone Number</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.phone || '—'}</div>
                 </div>
                 <div>
-                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Location & DOJ</div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{selectedEmp.location || 'N/A'} ({selectedEmp.date_of_joining || 'N/A'})</div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Designation</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.designation || '—'}</div>
+                </div>
+                <div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Department</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.department || '—'}</div>
+                </div>
+                <div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Location</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.location || '—'}</div>
+                </div>
+                <div>
+                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700 }}>Date of Joining</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>{selectedEmp.date_of_joining || '—'}</div>
                 </div>
               </div>
             </div>
-
-            <h4 style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)', marginBottom: 12 }}>
-              Assigned Trainings ({empHistory.length})
-            </h4>
-
-            {historyLoading ? (
-              <LoadingSpinner />
-            ) : empHistory.length === 0 ? (
-              <div className="muted" style={{ padding: '20px', textAlign: 'center', background: 'var(--surface-2)', borderRadius: 8 }}>
-                No training courses assigned to this employee yet.
-              </div>
-            ) : (
-              <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-                <table className="data">
-                  <thead>
-                    <tr>
-                      <th>Course Title</th>
-                      <th>Cycle</th>
-                      <th>Assigned / Due</th>
-                      <th>Video Progress</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {empHistory.map((item) => {
-                      const isCompleted = item.status === 'Completed'
-                      const isOverdue = item.status === 'Overdue'
-                      return (
-                        <tr key={item.id}>
-                          <td>
-                            <strong>{item.course_title}</strong>
-                            <div className="muted" style={{ fontSize: 11 }}>{item.course_category}</div>
-                          </td>
-                          <td><span className="chip" style={{ fontSize: 11 }}>{item.cycle}</span></td>
-                          <td>
-                            <div style={{ fontSize: 12 }}>Assigned: {item.assigned_on ? item.assigned_on.slice(0, 10) : '—'}</div>
-                            <div className="muted" style={{ fontSize: 11 }}>Due: {item.due_date ? item.due_date.slice(0, 10) : '—'}</div>
-                          </td>
-                          <td>
-                            <div className="flex" style={{ gap: 6, alignItems: 'center' }}>
-                              <div style={{ flex: 1, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: `${item.watched_percent || 0}%`, background: 'var(--brand-500)' }} />
-                              </div>
-                              <span style={{ fontSize: 11, fontWeight: 700 }}>{Math.round(item.watched_percent || 0)}%</span>
-                            </div>
-                          </td>
-                          <td>
-                            <Badge variant={isCompleted ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'}>
-                              {item.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         )}
       </Modal>

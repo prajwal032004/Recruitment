@@ -46,7 +46,7 @@ export default function EmployeePortalLogin() {
       const res = await apiPost(`/auth/emp/${empCode}/login`, { password })
       loginWithSession(res.token, res.user)
       toast.success(`Welcome back, ${res.user.name || empInfo?.name}!`)
-      navigate('/app/my-trainings')
+      navigate('/app/my-profile')
     } catch (e) {
       toast.error(e.message || 'Invalid password.')
     } finally {

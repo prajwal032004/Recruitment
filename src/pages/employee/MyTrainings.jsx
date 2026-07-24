@@ -293,11 +293,20 @@ export default function MyTrainings() {
 
     if (dur > 0) detectAndUpdateDuration(dur)
 
-    // Strict 1-Minute Fast-Forward Guard
+    // Strict 2-Minute & 1-Minute Anti-Skipping Guard for YouTube
+    if (cur > maxW + 120) {
+      ytPlayerRef.current.seekTo(maxW, true)
+      if (Date.now() - lastWarningTimeRef.current > 2000) {
+        toast.error('Skipping forward by more than 2 minutes is not allowed. Position reset to highest watched point.')
+        lastWarningTimeRef.current = Date.now()
+      }
+      return
+    }
+
     if (cur > maxW + 60) {
       ytPlayerRef.current.seekTo(maxW, true)
-      if (Date.now() - lastWarningTimeRef.current > 2500) {
-        toast.error('Fast-forwarding is restricted to a maximum of 1 minute ahead. Please watch the video.')
+      if (Date.now() - lastWarningTimeRef.current > 2000) {
+        toast.error('Fast-forwarding is restricted to a maximum of 1 minute ahead. Reverting to watched position.')
         lastWarningTimeRef.current = Date.now()
       }
       return
@@ -387,10 +396,19 @@ export default function MyTrainings() {
 
     if (dur > 0) detectAndUpdateDuration(dur)
 
+    if (cur > maxW + 120) {
+      videoRef.current.currentTime = maxW
+      if (Date.now() - lastWarningTimeRef.current > 2000) {
+        toast.error('Skipping forward by more than 2 minutes is not allowed. Position reset to highest watched point.')
+        lastWarningTimeRef.current = Date.now()
+      }
+      return
+    }
+
     if (cur > maxW + 60) {
       videoRef.current.currentTime = maxW
-      if (Date.now() - lastWarningTimeRef.current > 2500) {
-        toast.error('Fast-forwarding is restricted to a maximum of 1 minute ahead. Please watch the video.')
+      if (Date.now() - lastWarningTimeRef.current > 2000) {
+        toast.error('Fast-forwarding is restricted to a maximum of 1 minute ahead. Reverting to watched position.')
         lastWarningTimeRef.current = Date.now()
       }
       return

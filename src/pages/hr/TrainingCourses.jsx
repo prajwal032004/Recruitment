@@ -49,6 +49,26 @@ export default function TrainingCourses() {
 
   const setC = (k) => (e) => setCourseForm({ ...courseForm, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
 
+  // Video Preview Modal State
+  const [videoModal, setVideoModal] = useState(false)
+  const [previewCourse, setPreviewCourse] = useState(null)
+
+  const openPreviewVideo = (c) => {
+    setPreviewCourse(c)
+    setVideoModal(true)
+  }
+
+  const deleteCourse = async (cid) => {
+    if (!window.confirm('Are you sure you want to deactivate/delete this training course?')) return
+    try {
+      await api.delete(`/training/courses/${cid}`)
+      toast.success('Course deactivated successfully')
+      refetch()
+    } catch (e) {
+      toast.error(e.message || 'Failed to delete course')
+    }
+  }
+
   const openAddCourse = () => {
     setEditCourseId(null)
     setCourseForm(BLANK_COURSE)
@@ -248,11 +268,22 @@ export default function TrainingCourses() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex" style={{ gap: 6, justifyContent: 'flex-end' }}>
-                      <button className="btn-soft btn-sm flex" style={{ gap: 4 }} onClick={() => openQBank(c)}>
-                        <HelpCircle size={14} /> <span>Questions</span>
+                      <button
+                        className="btn-soft btn-sm flex"
+                        style={{ gap: 4 }}
+                        title="Preview Video in Pop-up Modal"
+                        onClick={() => openPreviewVideo(c)}
+                      >
+                        <Video size={14} color="var(--brand-600)" /> <span>Preview</span>
                       </button>
-                      <button className="btn-ghost btn-sm" onClick={() => openEditCourse(c)}>
+                      <button className="btn-soft btn-sm flex" style={{ gap: 4 }} onClick={() => openQBank(c)}>
+                        <HelpCircle size={14} /> <span>Questions ({c.question_count})</span>
+                      </button>
+                      <button className="btn-ghost btn-sm" title="Edit Course" onClick={() => openEditCourse(c)}>
                         <Edit3 size={14} />
+                      </button>
+                      <button className="btn-ghost btn-sm" title="Delete Course" style={{ color: 'var(--red-600)' }} onClick={() => deleteCourse(c.id)}>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -439,6 +470,56 @@ export default function TrainingCourses() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </Modal>
+
+      {/* Admin Course Video Preview Modal */}
+      <Modal
+        open={videoModal}
+        onClose={() => setVideoModal(false)}
+        title={`Preview Course Video: ${previewCourse?.title || ''}`}
+        width={780}
+      >
+        {previewCourse && (
+          <div className="stack" style={{ gap: 16 }}>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, background: '#000', borderRadius: 14, overflow: 'hidden' }}>
+              {previewCourse.video_url?.includes('youtube') || previewCourse.video_url?.includes('youtu.be') ? (
+                <iframe
+                  src={
+                    previewCourse.video_url.includes('embed/')
+                      ? previewCourse.video_url
+                      : `https://www.youtube.com/embed/${
+                          previewCourse.video_url.includes('v=')
+                            ? previewCourse.video_url.split('v=')[1]?.split('&')[0]
+                            : previewCourse.video_url.split('youtu.be/')[1]?.split('?')[0]
+                        }`
+                  }
+                  title={previewCourse.title}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={previewCourse.video_url}
+                  controls
+                  autoPlay
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                />
+              )}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>{previewCourse.title}</div>
+              <div className="muted mt-1" style={{ fontSize: 13 }}>{previewCourse.description || 'Watch the training module to test video stream.'}</div>
+              <div className="flex wrap mt-3" style={{ gap: 12, fontSize: 12.5, color: 'var(--text-2)' }}>
+                <span>Category: <strong>{previewCourse.category}</strong></span>
+                <span>•</span>
+                <span>Duration: <strong>{previewCourse.duration_minutes} mins</strong></span>
+                <span>•</span>
+                <span>Pass Mark: <strong>{previewCourse.pass_mark}%</strong></span>
+              </div>
+            </div>
           </div>
         )}
       </Modal>

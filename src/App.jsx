@@ -10,6 +10,7 @@ import Register from './pages/Register'
 import Unauthorized from './pages/Unauthorized'
 import CollegeLogin from './pages/CollegeLogin'
 import InterviewerLogin from './pages/InterviewerLogin'
+import EmployeePortalLogin from './pages/EmployeePortalLogin'
 
 import Careers from './pages/public/Careers'
 import CareerDetail from './pages/public/CareerDetail'
@@ -47,15 +48,15 @@ import CollegeScorecard from './pages/college/CollegeScorecard'
 
 import CandidateProfile from './pages/candidate/CandidateProfile'
 import MyApplications from './pages/candidate/MyApplications'
-
 import Employees from './pages/hr/Employees'
 import TrainingHub from './pages/hr/TrainingHub'
-import TrainingCourses from './pages/hr/TrainingCourses'
-import AssignmentRules from './pages/hr/AssignmentRules'
-import TrainingCompliance from './pages/hr/TrainingCompliance'
-import MyTrainings from './pages/employee/MyTrainings'
-import ProctoredExamRoom from './pages/employee/ProctoredExamRoom'
-import EmployeePortalLogin from './pages/EmployeePortalLogin'
+import MyProfile from './pages/employee/MyProfile'
+
+function MyProfileRoute() {
+  const { user } = useAuth()
+  if (user?.role === 'EMPLOYEE') return <MyProfile />
+  return <CandidateProfile />
+}
 
 function RoleHome() {
   const { user, loading } = useAuth()
@@ -64,7 +65,7 @@ function RoleHome() {
   if (user.role === 'PLACEMENT_OFFICER' && user.college_slug) return <Navigate to={`/${user.college_slug}`} replace />
   if (user.role === 'CANDIDATE') return <Navigate to="/app/my-applications" replace />
   if (user.role === 'INTERVIEWER') return <Navigate to="/app/my-interviews" replace />
-  if (user.role === 'EMPLOYEE') return <Navigate to="/app/my-trainings" replace />
+  if (user.role === 'EMPLOYEE') return <Navigate to="/app/my-profile" replace />
   if (user.role === 'HR') return <Navigate to="/app/pipeline" replace />
   return <Navigate to="/app/dashboard" replace />
 }
@@ -108,16 +109,13 @@ export default function App() {
         <Route path="training-courses" element={<Navigate to="/app/training-hub" replace />} />
         <Route path="assignment-rules" element={<Navigate to="/app/training-hub" replace />} />
         <Route path="training-compliance" element={<Navigate to="/app/training-hub" replace />} />
-        <Route path="my-trainings" element={<ProtectedRoute roles={['EMPLOYEE', 'ADMIN', 'HR']}><MyTrainings /></ProtectedRoute>} />
-        <Route path="exam/:aid" element={<ProtectedRoute roles={['EMPLOYEE', 'ADMIN', 'HR']}><ProctoredExamRoom /></ProtectedRoute>} />
-        <Route path="policy-assistant" element={<ProtectedRoute roles={['ADMIN', 'HR', 'CANDIDATE']}><PolicyAssistant /></ProtectedRoute>} />
+        <Route path="policy-assistant" element={<ProtectedRoute roles={['ADMIN', 'HR', 'CANDIDATE', 'EMPLOYEE']}><PolicyAssistant /></ProtectedRoute>} />
         <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="audit" element={<ProtectedRoute roles={['ADMIN']}><Audit /></ProtectedRoute>} />
         <Route path="data-quality" element={<ProtectedRoute roles={STAFF}><DataQuality /></ProtectedRoute>} />
         <Route path="drives" element={<ProtectedRoute roles={STAFF}><Drives /></ProtectedRoute>} />
         <Route path="workforce" element={<ProtectedRoute roles={STAFF}><WorkforcePlanning /></ProtectedRoute>} />
-        {/* Candidate Only */}
-        <Route path="my-profile" element={<ProtectedRoute roles={['CANDIDATE']}><CandidateProfile /></ProtectedRoute>} />
+        <Route path="my-profile" element={<ProtectedRoute roles={['CANDIDATE', 'EMPLOYEE']}><MyProfileRoute /></ProtectedRoute>} />
         <Route path="my-applications" element={<ProtectedRoute roles={['CANDIDATE']}><MyApplications /></ProtectedRoute>} />
       </Route>
 
