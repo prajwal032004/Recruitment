@@ -35,9 +35,8 @@ export default function Register() {
       </div>
       <div className="mpc-auth-right fade-in">
         <div className="mpc-auth-card">
-          <Link to="/" className="mpc-logo" style={{ marginBottom: 40 }}>
-            <span className="mpc-logo-text">MPC</span>
-            <span className="mpc-logo-sub">CLOUD CONSULTING</span>
+          <Link to="/" className="mpc-logo" style={{ marginBottom: 32, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
           </Link>
           
           <h2 className="mpc-auth-title">Create account</h2>

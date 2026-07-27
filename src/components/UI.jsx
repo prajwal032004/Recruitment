@@ -120,8 +120,9 @@ export function ProgressBar({ value = 0 }) {
 }
 
 /* ---------- Modal ---------- */
-export function Modal({ open, onClose, title, children, footer, width = 520 }) {
-  if (!open) return null
+export function Modal({ open, isOpen, onClose, title, children, footer, width = 520 }) {
+  const show = open !== undefined ? open : (isOpen !== undefined ? isOpen : true)
+  if (!show) return null
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, background: 'rgba(20,22,40,.42)', backdropFilter: 'blur(2px)',

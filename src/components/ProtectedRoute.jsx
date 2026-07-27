@@ -8,9 +8,10 @@ export default function ProtectedRoute({ children, roles }) {
 
   if (loading) return <LoadingSpinner full label="Checking your session…" />
   if (!user) {
-    const lastEmp = localStorage.getItem('last_emp_code')
-    if (lastEmp && location.pathname.includes('my-trainings')) {
-      return <Navigate to={`/emp/${lastEmp}`} state={{ from: location }} replace />
+    if (location.pathname.startsWith('/manager/')) {
+      const parts = location.pathname.split('/')
+      const slug = parts[2] || 'engineering'
+      return <Navigate to={`/manager/${slug}/login`} state={{ from: location }} replace />
     }
     return <Navigate to="/login" state={{ from: location }} replace />
   }

@@ -9,10 +9,12 @@ export default function PublicHeader() {
 
   const links = [
     { label: 'CAREERS', to: '/careers', active: true },
+    { label: 'MANAGER PORTAL', to: '/manager/engineering/login', active: false },
   ]
 
   const getDashboardLink = (u) => {
     if (!u) return '/login'
+    if (u.role === 'DEPT_MANAGER' && u.department_slug) return `/manager/${u.department_slug}`
     if (u.role === 'PLACEMENT_OFFICER' && u.college_slug) return `/${u.college_slug}`
     if (u.role === 'CANDIDATE') return '/app/my-applications'
     if (u.role === 'INTERVIEWER') return '/app/my-interviews'
@@ -22,6 +24,7 @@ export default function PublicHeader() {
 
   const getDashboardLabel = (u) => {
     if (!u) return 'Sign In'
+    if (u.role === 'DEPT_MANAGER') return 'Manager Portal'
     if (u.role === 'CANDIDATE') return 'My Applications'
     if (u.role === 'PLACEMENT_OFFICER') return 'College Portal'
     return 'Dashboard'
@@ -30,9 +33,8 @@ export default function PublicHeader() {
   return (
     <header className="mpc-header">
       <div className="mpc-header-container">
-        <Link to="/" className="mpc-logo">
-          <span className="mpc-logo-text">MPC</span>
-          <span className="mpc-logo-sub">CLOUD CONSULTING</span>
+        <Link to="/" className="mpc-logo" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
         </Link>
         
         {/* Desktop Nav */}

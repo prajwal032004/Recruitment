@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Users, Plus, Upload, Download, Search, CheckCircle2, Clock, XCircle, AlertCircle, FileText, Eye, KeyRound } from 'lucide-react'
-import api, { baseURL, apiGet, apiPost, apiPut } from '../../api/client'
+import { Users, Plus, Upload, Download, Search, CheckCircle2, Clock, XCircle, AlertCircle, FileText, Eye, KeyRound, Trash2, Undo2 } from 'lucide-react'
+import api, { baseURL, apiGet, apiPost, apiPut, apiDelete } from '../../api/client'
 import { useFetch } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, EmptyState, PageHeader, Modal, Badge, Pagination, Avatar } from '../../components/UI'
 import { CredentialsModal } from '../../components/CredentialsModal'
@@ -93,6 +93,43 @@ export default function Employees() {
       refetch()
     } catch (e) {
       toast.error(e.message || 'Failed to save employee')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDeleteEmployee = async (emp) => {
+    if (!window.confirm(`Are you sure you want to delete employee '${emp.name}' (${emp.employee_code})?\n\nYou can undo this deletion up to 10 times.`)) {
+      return
+    }
+    setBusy(true)
+    try {
+      const res = await apiDelete(`/employees/${emp.id}`)
+      const data = res || {}
+      const duc = data.delete_undo_count || 0
+      const rem = data.remaining_delete_undos ?? (10 - duc)
+      toast.success(`Employee '${emp.name}' deleted. (${duc}/10 undos used, ${rem} left)`)
+      if (detailModal) setDetailModal(false)
+      refetch()
+    } catch (e) {
+      toast.error(e.message || 'Failed to delete employee')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleUndoDeleteEmployee = async (emp) => {
+    if ((emp.delete_undo_count || 0) >= 10) {
+      return toast.error('Maximum delete undo limit (10/10) reached for this employee.')
+    }
+    setBusy(true)
+    try {
+      const res = await apiPost(`/employees/${emp.id}/undo-delete`)
+      toast.success(res.message || `Employee '${emp.name}' restored successfully!`)
+      if (detailModal) setDetailModal(false)
+      refetch()
+    } catch (e) {
+      toast.error(e.message || 'Failed to undo employee deletion')
     } finally {
       setBusy(false)
     }
@@ -208,7 +245,7 @@ export default function Employees() {
         />
         <select
           className="select"
-          style={{ width: 140 }}
+          style={{ width: 160 }}
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
         >
@@ -216,6 +253,7 @@ export default function Employees() {
           <option value="Active">Active</option>
           <option value="Inactive">Inactive</option>
           <option value="On Leave">On Leave</option>
+          <option value="Deleted">Deleted (Undo Available)</option>
         </select>
       </div>
 
@@ -241,59 +279,94 @@ export default function Employees() {
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((emp) => (
-                  <tr key={emp.id}>
-                    <td>
-                      <span className="chip" style={{ fontWeight: 700 }}>{emp.employee_code}</span>
-                    </td>
-                    <td>
-                      <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-                        <Avatar name={emp.name} size={36} />
-                        <div>
-                          <strong style={{ color: 'var(--text)' }}>{emp.name}</strong>
-                          <div className="muted" style={{ fontSize: 12 }}>{emp.email}</div>
+                {data.items.map((emp) => {
+                  const isDeleted = emp.is_deleted || emp.status === 'Deleted'
+                  const duc = emp.delete_undo_count || 0
+                  const remainingUndos = emp.remaining_delete_undos ?? Math.max(0, 10 - duc)
+
+                  return (
+                    <tr key={emp.id} style={{ opacity: isDeleted ? 0.75 : 1 }}>
+                      <td>
+                        <span className="chip" style={{ fontWeight: 700 }}>{emp.employee_code}</span>
+                      </td>
+                      <td>
+                        <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
+                          <Avatar name={emp.name} size={36} />
+                          <div>
+                            <strong style={{ color: 'var(--text)' }}>{emp.name}</strong>
+                            <div className="muted" style={{ fontSize: 12 }}>{emp.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div>{emp.designation || '—'}</div>
-                      <div className="muted" style={{ fontSize: 12 }}>{emp.department || '—'}</div>
-                    </td>
-                    <td>{emp.location || '—'}</td>
-                    <td>{emp.date_of_joining || '—'}</td>
-                    <td>
-                      <Badge variant={emp.status === 'Active' ? 'badge-green' : 'badge-amber'}>
-                        {emp.status}
-                      </Badge>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="flex" style={{ gap: 6, justifyContent: 'flex-end' }}>
-                        <button
-                          className="btn-soft btn-sm flex"
-                          style={{ gap: 4, color: 'var(--brand-600)', background: 'var(--brand-50)' }}
-                          title="Share Login Credentials"
-                          onClick={async () => {
-                            try {
-                              const res = await apiGet(`/employees/${emp.id}/credentials`)
-                              setCredentials(res)
-                              setShowCreds(true)
-                            } catch (e) {
-                              toast.error('Failed to load credentials')
-                            }
-                          }}
-                        >
-                          <KeyRound size={13} /> <span>Credentials</span>
-                        </button>
-                        <button className="btn-ghost btn-sm" title="View Training History" onClick={() => openProfile(emp)}>
-                          <Eye size={14} />
-                        </button>
-                        <button className="btn-soft btn-sm" onClick={() => openEdit(emp)}>
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <div>{emp.designation || '—'}</div>
+                        <div className="muted" style={{ fontSize: 12 }}>{emp.department || '—'}</div>
+                      </td>
+                      <td>{emp.location || '—'}</td>
+                      <td>{emp.date_of_joining || '—'}</td>
+                      <td>
+                        <Badge variant={isDeleted ? 'badge-red' : emp.status === 'Active' ? 'badge-green' : 'badge-amber'}>
+                          {isDeleted ? 'Deleted' : emp.status}
+                        </Badge>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="flex" style={{ gap: 6, justifyContent: 'flex-end' }}>
+                          {isDeleted ? (
+                            <button
+                              className="btn-soft btn-sm flex"
+                              style={{
+                                gap: 4,
+                                color: duc >= 10 ? 'var(--text-3)' : '#059669',
+                                background: duc >= 10 ? 'var(--surface-3)' : '#ecfdf5',
+                                border: duc >= 10 ? '1px solid var(--border)' : '1px solid #a7f3d0'
+                              }}
+                              disabled={duc >= 10}
+                              title={duc >= 10 ? 'Maximum undo limit (10/10) reached' : `Restore employee (${remainingUndos} undos left)`}
+                              onClick={() => handleUndoDeleteEmployee(emp)}
+                            >
+                              <Undo2 size={13} />
+                              <span>{duc >= 10 ? 'Max Undos (10/10)' : `Undo Delete (${duc}/10)`}</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                className="btn-soft btn-sm flex"
+                                style={{ gap: 4, color: 'var(--brand-600)', background: 'var(--brand-50)' }}
+                                title="Share Login Credentials"
+                                onClick={async () => {
+                                  try {
+                                    const res = await apiGet(`/employees/${emp.id}/credentials`)
+                                    setCredentials(res)
+                                    setShowCreds(true)
+                                  } catch (e) {
+                                    toast.error('Failed to load credentials')
+                                  }
+                                }}
+                              >
+                                <KeyRound size={13} /> <span>Credentials</span>
+                              </button>
+                              <button className="btn-ghost btn-sm" title="View Training History" onClick={() => openProfile(emp)}>
+                                <Eye size={14} />
+                              </button>
+                              <button className="btn-soft btn-sm" onClick={() => openEdit(emp)}>
+                                Edit
+                              </button>
+                              <button
+                                className="btn-soft btn-sm flex"
+                                style={{ gap: 4, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca' }}
+                                title={`Delete Employee (${remainingUndos} undos available)`}
+                                onClick={() => handleDeleteEmployee(emp)}
+                              >
+                                <Trash2 size={13} />
+                                <span>Delete</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -436,20 +509,47 @@ export default function Employees() {
           <div className="flex" style={{ justifyContent: 'space-between', width: '100%' }}>
             {selectedEmp && (
               <div className="flex" style={{ gap: 8 }}>
-                <button
-                  className="btn-soft btn-sm flex"
-                  style={{ gap: 6 }}
-                  onClick={() => { setDetailModal(false); fetchAndShowCreds(selectedEmp) }}
-                >
-                  <KeyRound size={14} /> <span>Get Login Credentials</span>
-                </button>
-                <button
-                  className="btn-secondary btn-sm flex"
-                  style={{ gap: 6 }}
-                  onClick={() => { setDetailModal(false); openEdit(selectedEmp) }}
-                >
-                  <span>Edit Record</span>
-                </button>
+                {selectedEmp.is_deleted || selectedEmp.status === 'Deleted' ? (
+                  <button
+                    className="btn-soft btn-sm flex"
+                    style={{
+                      gap: 6,
+                      color: (selectedEmp.delete_undo_count || 0) >= 10 ? 'var(--text-3)' : '#059669',
+                      background: (selectedEmp.delete_undo_count || 0) >= 10 ? 'var(--surface-3)' : '#ecfdf5',
+                      border: (selectedEmp.delete_undo_count || 0) >= 10 ? '1px solid var(--border)' : '1px solid #a7f3d0'
+                    }}
+                    disabled={(selectedEmp.delete_undo_count || 0) >= 10}
+                    onClick={() => handleUndoDeleteEmployee(selectedEmp)}
+                  >
+                    <Undo2 size={14} />
+                    <span>{(selectedEmp.delete_undo_count || 0) >= 10 ? 'Max Undos (10/10)' : `Undo Delete (${selectedEmp.delete_undo_count || 0}/10)`}</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="btn-soft btn-sm flex"
+                      style={{ gap: 6 }}
+                      onClick={() => { setDetailModal(false); fetchAndShowCreds(selectedEmp) }}
+                    >
+                      <KeyRound size={14} /> <span>Get Login Credentials</span>
+                    </button>
+                    <button
+                      className="btn-secondary btn-sm flex"
+                      style={{ gap: 6 }}
+                      onClick={() => { setDetailModal(false); openEdit(selectedEmp) }}
+                    >
+                      <span>Edit Record</span>
+                    </button>
+                    <button
+                      className="btn-soft btn-sm flex"
+                      style={{ gap: 6, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca' }}
+                      onClick={() => handleDeleteEmployee(selectedEmp)}
+                    >
+                      <Trash2 size={14} />
+                      <span>Delete</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
             <button className="btn-ghost btn-sm" onClick={() => setDetailModal(false)}>Close</button>

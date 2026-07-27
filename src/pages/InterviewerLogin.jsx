@@ -33,8 +33,8 @@ export default function InterviewerLogin() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-brand">
-          <div className="brand-mark" style={{ background: '#4f46e5' }}><UserCheck size={18} /></div>
+        <div className="auth-brand" style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
+          <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
           <div>
             <div className="brand-name" style={{ fontSize: 17 }}>Interviewer Portal Login</div>
             <div className="brand-sub">MPC Cloud Consulting</div>

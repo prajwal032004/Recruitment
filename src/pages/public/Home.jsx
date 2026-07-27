@@ -26,9 +26,8 @@ export default function Home() {
       
       {/* ─── Nav Bar ─── */}
       <nav className="public-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <span className="mpc-logo-text" style={{ fontSize: 24, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
-          <span className="mpc-logo-sub" style={{ fontSize: 9, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 4 }}>CLOUD CONSULTING</span>
+        <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         </Link>
         <div className="flex" style={{ gap: 16, alignItems: 'center' }}>
           <Link to="/careers" className="btn-ghost" style={{ fontSize: 14, fontWeight: 600, textDecoration: 'none', padding: '8px 16px' }}>Browse Jobs</Link>

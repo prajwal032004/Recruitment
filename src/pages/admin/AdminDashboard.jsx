@@ -34,13 +34,6 @@ export default function AdminDashboard() {
               <div className="muted" style={{ fontSize: 11 }}>Credentials & Identities</div>
             </div>
           </a>
-          <a href="/app/training-hub" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
-            <Award size={18} color="var(--brand-500)" />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Training Management</div>
-              <div className="muted" style={{ fontSize: 11 }}>Courses, Rules & Compliance</div>
-            </div>
-          </a>
           <a href="/app/policy-assistant" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
             <FileText size={18} color="var(--brand-500)" />
             <div style={{ textAlign: 'left' }}>

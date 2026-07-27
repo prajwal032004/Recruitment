@@ -42,15 +42,17 @@ export default function PolicyAssistant() {
     
     try {
       const res = await apiPost('/policy/ask', { question: text })
+      const ansObj = res?.answer ? res : (res?.data || res)
       setMessages(prev => [...prev, {
         role: 'assistant',
-        text: res.answer,
-        sources: res.sources,
-        confidence: res.confidence
+        text: ansObj.answer || 'I could not find an answer in the uploaded documents.',
+        sources: ansObj.sources || [],
+        confidence: ansObj.confidence || 0
       }])
     } catch (e) {
-      toast.error(e.message)
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Error: Could not reach the policy assistant service.' }])
+      const errTxt = e?.message || e?.error || 'Could not reach the policy assistant service.'
+      toast.error(errTxt)
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${errTxt}` }])
     } finally {
       setAsking(false)
     }

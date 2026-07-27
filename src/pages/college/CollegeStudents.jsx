@@ -26,8 +26,10 @@ export default function CollegeStudents() {
   const addStudent = async () => {
     if (!form.name || !form.email) return toast.error('Name and email required')
     setBusy(true)
+    const rawSkills = typeof form.skills === 'string' ? form.skills.split(/[;,]/) : (Array.isArray(form.skills) ? form.skills : [])
+    const skillsList = rawSkills.map((s) => String(s).trim()).filter(Boolean)
     try {
-      await apiPost(`/college/${slug}/students`, { ...form, skills: form.skills.split(/[;,]/).map((s) => s.trim()).filter(Boolean) })
+      await apiPost(`/college/${slug}/students`, { ...form, skills: skillsList })
       toast.success('Student added'); setAddModal(false); setForm(BLANK); refetch()
     } catch (e) { toast.error(e.message) } finally { setBusy(false) }
   }

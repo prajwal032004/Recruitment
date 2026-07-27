@@ -19,6 +19,9 @@ export default function Login() {
       toast.success(`Welcome back, ${user.name}`)
       if (user.role === 'CANDIDATE') nav('/app/my-applications')
       else if (user.role === 'HR') nav('/app/pipeline')
+      else if (user.role === 'PLACEMENT_OFFICER') nav(`/${user.college_slug || ''}`)
+      else if (user.role === 'INTERVIEWER') nav('/app/my-interviews')
+      else if (user.role === 'EMPLOYEE') nav('/app/my-profile')
       else nav('/app/dashboard')
     } catch (err) {
       toast.error(err.message || 'Sign in failed')
@@ -37,9 +40,8 @@ export default function Login() {
       </div>
       <div className="mpc-auth-right fade-in">
         <div className="mpc-auth-card">
-          <Link to="/" className="mpc-logo" style={{ marginBottom: 40 }}>
-            <span className="mpc-logo-text">MPC</span>
-            <span className="mpc-logo-sub">CLOUD CONSULTING</span>
+          <Link to="/" className="mpc-logo" style={{ marginBottom: 32, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
           </Link>
           
           <h2 className="mpc-auth-title">Welcome back</h2>
@@ -68,6 +70,12 @@ export default function Login() {
             <span className="eyebrow" style={{ width: '100%', textAlign: 'center' }}>Demo Accounts</span>
             <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('admin@recruit.local'); setPassword('admin12345') }}>
               Admin
+            </button>
+            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('sharan@gmail.com'); setPassword('123456') }}>
+              Placement Officer (JSSATE)
+            </button>
+            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('prakash@gmail.com'); setPassword('admin123') }}>
+              Interviewer
             </button>
           </div>
 

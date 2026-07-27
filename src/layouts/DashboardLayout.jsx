@@ -13,6 +13,7 @@ import NotificationBell from '../components/NotificationBell'
 const NAV = {
   ADMIN: [
     { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/manager', label: 'Dept Managers', icon: Building2 },
     { to: '/app/pipeline', label: 'Recruitment Pipeline', icon: KanbanSquare },
     { to: '/app/applications', label: 'Applications', icon: FileText },
     { to: '/app/candidates', label: 'Candidates', icon: Users },
@@ -24,7 +25,6 @@ const NAV = {
     { to: '/app/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/app/joined', label: 'Joined Candidates', icon: UserRoundCheck },
     { to: '/app/employees', label: 'Employees', icon: Users },
-    { to: '/app/training-hub', label: 'Training Management', icon: Award },
     { to: '/app/drives', label: 'Placement Drives', icon: Rocket },
     { to: '/app/workforce', label: 'Workforce Planning', icon: TrendingUp },
     { to: '/app/data-quality', label: 'Data Quality', icon: ShieldCheck },
@@ -32,6 +32,7 @@ const NAV = {
     { to: '/app/audit', label: 'Audit Log', icon: ScrollText },
   ],
   HR: [
+    { to: '/app/manager', label: 'Dept Managers', icon: Building2 },
     { to: '/app/pipeline', label: 'Recruitment Pipeline', icon: KanbanSquare },
     { to: '/app/applications', label: 'Applications', icon: FileText },
     { to: '/app/candidates', label: 'Candidates', icon: Users },
@@ -42,7 +43,6 @@ const NAV = {
     { to: '/app/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/app/joined', label: 'Joined Candidates', icon: UserRoundCheck },
     { to: '/app/employees', label: 'Employees', icon: Users },
-    { to: '/app/training-hub', label: 'Training Management', icon: Award },
     { to: '/app/workforce', label: 'Workforce Planning', icon: TrendingUp },
     { to: '/app/data-quality', label: 'Data Quality', icon: ShieldCheck },
     { to: '/app/policy-assistant', label: 'HR Policy Storage', icon: MessageSquareText },
@@ -72,11 +72,6 @@ export default function DashboardLayout() {
 
   const doLogout = () => { logout(); nav('/login') }
 
-  // If in Secured Exam Room, hide all navbars and sidebars completely
-  if (location.pathname.includes('/app/exam/')) {
-    return <Outlet />
-  }
-
   if (user?.role === 'EMPLOYEE') {
     return (
       <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -98,9 +93,8 @@ export default function DashboardLayout() {
           }}
         >
           <div className="flex wrap" style={{ gap: 16, alignItems: 'center' }}>
-            <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
-              <span className="mpc-logo-text" style={{ fontSize: 20, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
-              <span className="mpc-logo-sub" style={{ fontSize: 8, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 2 }}>CLOUD CONSULTING</span>
+            <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             </Link>
             <div style={{ height: 24, width: 1, background: '#cbd5e1' }} />
             <div>
@@ -161,9 +155,8 @@ export default function DashboardLayout() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
         }}>
           <div className="flex wrap" style={{ gap: 16, alignItems: 'center' }}>
-            <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
-              <span className="mpc-logo-text" style={{ fontSize: 20, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
-              <span className="mpc-logo-sub" style={{ fontSize: 8, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 2 }}>CLOUD CONSULTING</span>
+            <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             </Link>
             <div style={{ height: 24, width: 1, background: '#cbd5e1' }} />
             <div>
@@ -213,9 +206,8 @@ export default function DashboardLayout() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
         }}>
           <div className="flex wrap" style={{ gap: 20, alignItems: 'center' }}>
-            <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
-              <span className="mpc-logo-text" style={{ fontSize: 20, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
-              <span className="mpc-logo-sub" style={{ fontSize: 8, fontWeight: 700, color: '#333', letterSpacing: 0.5, marginTop: 2 }}>CLOUD CONSULTING</span>
+            <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             </Link>
             
             <nav className="flex wrap" style={{ gap: 6 }}>
@@ -260,9 +252,8 @@ export default function DashboardLayout() {
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-brand">
-          <Link to="/" className="mpc-logo" style={{ flexDirection: 'column', textDecoration: 'none' }}>
-            <span className="mpc-logo-text" style={{ fontSize: 24, fontWeight: 800, color: '#c5307b', letterSpacing: 1, lineHeight: 1 }}>MPC</span>
-            <span className="mpc-logo-sub" style={{ fontSize: 8.5, fontWeight: 700, color: '#475569', letterSpacing: 0.5, marginTop: 4 }}>CLOUD CONSULTING</span>
+          <Link to="/" className="mpc-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
           </Link>
           <button className="icon-btn mobile-only" onClick={() => setOpen(false)} style={{ marginLeft: 'auto' }}><X size={18} /></button>
         </div>

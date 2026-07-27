@@ -22,13 +22,13 @@ export default function CollegeLayout() {
   return (
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
-        <div className="sidebar-brand">
-          <div className="brand-mark"><Building2 size={18} /></div>
+        <div className="sidebar-brand" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <img src="https://smartdesk.mpcholdinggroup.com/static/media/MPC_Logos.a18c8f830b6cadd171cd.jpg" alt="MPC Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
           <div>
             <div className="brand-name">College Portal</div>
             <div className="brand-sub">{slug}</div>
           </div>
-          <button className="icon-btn mobile-only" onClick={() => setOpen(false)}><X size={18} /></button>
+          <button className="icon-btn mobile-only" onClick={() => setOpen(false)} style={{ marginLeft: 'auto' }}><X size={18} /></button>
         </div>
         <nav className="sidebar-nav">
           {items.map((it) => (
