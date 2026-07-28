@@ -5,7 +5,7 @@ import {
   ClipboardList, UserPlus, Shield, ChevronRight, CheckCircle2,
   Clock, AlertCircle, ArrowUpRight, LogIn, Sparkles, Filter,
   Mail, Award, UserCheck, Layers, TrendingUp, Share2, Copy,
-  Trash2, Key, Lock, Eye, EyeOff, RotateCcw
+  Trash2, Key, Lock, Eye, EyeOff, RotateCcw, AlertTriangle
 } from 'lucide-react'
 import { useFetch } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, EmptyState, StatCard, PageHeader, Badge, Modal } from '../../components/UI'
@@ -47,6 +47,16 @@ export default function Managers() {
   const [viewCandLoading, setViewCandLoading] = useState(false)
   const [viewCandSearch, setViewCandSearch] = useState('')
   const [undoBusy, setUndoBusy] = useState(false)
+
+  // Delete Department Modal State
+  const [deleteDeptModalOpen, setDeleteDeptModalOpen] = useState(false)
+  const [deletingDept, setDeletingDept] = useState(null)
+  const [deleteDeptBusy, setDeleteDeptBusy] = useState(false)
+
+  // Delete Requisition Modal State
+  const [deleteReqModalOpen, setDeleteReqModalOpen] = useState(false)
+  const [deletingReq, setDeletingReq] = useState(null)
+  const [deleteReqBusy, setDeleteReqBusy] = useState(false)
 
   const openViewCandidatesModal = async (req) => {
     setSelectedReqForView(req)
@@ -219,15 +229,48 @@ export default function Managers() {
     }
   }
 
-  // Handle Delete Department
-  const handleDeleteDepartment = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to remove '${name}' department manager?`)) return
+  // Handle Delete Department (Open Confirmation Modal)
+  const openDeleteDepartmentModal = (dept) => {
+    setDeletingDept(dept)
+    setDeleteDeptModalOpen(true)
+  }
+
+  const handleConfirmDeleteDept = async () => {
+    if (!deletingDept) return
+    setDeleteDeptBusy(true)
     try {
-      await apiDelete(`/manager/departments/${id}`)
-      toast.success(`Department '${name}' removed.`)
+      await apiDelete(`/manager/departments/${deletingDept.id}`)
+      toast.success(`Department '${deletingDept.name}', manager account, and all associated position requisitions deleted successfully.`)
+      setDeleteDeptModalOpen(false)
+      setDeletingDept(null)
       refetchDepts()
+      refetchReqs()
     } catch (err) {
       toast.error(err.message || 'Failed to delete department.')
+    } finally {
+      setDeleteDeptBusy(false)
+    }
+  }
+
+  // Handle Delete Requisition (Open Confirmation Modal)
+  const openDeleteReqModal = (req) => {
+    setDeletingReq(req)
+    setDeleteReqModalOpen(true)
+  }
+
+  const handleConfirmDeleteReq = async () => {
+    if (!deletingReq) return
+    setDeleteReqBusy(true)
+    try {
+      await apiDelete(`/manager/hiring-requests/${deletingReq.id}`)
+      toast.success(`Position requisition #${deletingReq.id} deleted successfully.`)
+      setDeleteReqModalOpen(false)
+      setDeletingReq(null)
+      refetchReqs()
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete position requisition.')
+    } finally {
+      setDeleteReqBusy(false)
     }
   }
 
@@ -589,11 +632,11 @@ export default function Managers() {
                             ● {d.status || 'Active'}
                           </span>
                           <button
-                            onClick={() => handleDeleteDepartment(d.id, d.name || 'Department')}
-                            style={{ color: 'rgba(255,255,255,0.6)', padding: 4, background: 'none', border: 'none', cursor: 'pointer', borderRadius: 4 }}
-                            title="Remove Department"
+                            onClick={() => openDeleteDepartmentModal(d)}
+                            style={{ color: 'rgba(255,255,255,0.75)', padding: 5, background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', cursor: 'pointer', borderRadius: 6 }}
+                            title="Delete Department & Requisitions"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </div>
@@ -902,6 +945,27 @@ export default function Managers() {
                               <UserPlus size={14} /> {(req.assigned_candidate_count || 0) > 0 ? `Assign Remaining (${req.remaining_seats})` : 'Assign Students'}
                             </button>
                           )}
+
+                          {/* Delete Requisition Button */}
+                          <button
+                            onClick={() => openDeleteReqModal(req)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              background: '#fff1f2',
+                              color: '#e11d48',
+                              border: '1px solid #fecdd3',
+                              borderRadius: 8,
+                              padding: '6px 12px',
+                              fontSize: 12.5,
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                            title="Delete Position Requisition"
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1331,6 +1395,90 @@ export default function Managers() {
             <button className="btn btn-primary" onClick={() => setViewCandModalOpen(false)}>
               Close
             </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Department Confirmation Popup Modal */}
+      {deleteDeptModalOpen && deletingDept && (
+        <Modal open={true} title="Confirm Department & Requisitions Deletion" onClose={() => setDeleteDeptModalOpen(false)}>
+          <div className="stack" style={{ gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fff1f2', border: '1px solid #fecdd3', padding: 16, borderRadius: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#ffe4e6', color: '#e11d48', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 800, color: '#9f1239' }}>
+                  Do you really want to delete department '{deletingDept.name}'?
+                </h4>
+                <p style={{ margin: 0, fontSize: 13, color: '#be123c', lineHeight: 1.4 }}>
+                  This action will permanently delete the <strong>{deletingDept.name}</strong> department manager account, all position requisitions, linked jobs, and candidate mappings.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: 14, borderRadius: 10, fontSize: 13, color: '#334155' }}>
+              <div><strong>Department Name:</strong> {deletingDept.name} ({deletingDept.code || 'DEP'})</div>
+              <div><strong>Manager:</strong> {deletingDept.manager_name || 'Department Manager'}</div>
+              <div><strong>Manager Email:</strong> {deletingDept.manager_email}</div>
+            </div>
+
+            <div className="flex" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setDeleteDeptModalOpen(false)} style={{ fontWeight: 700 }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteDeptBusy}
+                onClick={handleConfirmDeleteDept}
+                className="btn"
+                style={{ background: '#e11d48', color: '#ffffff', border: 'none', fontWeight: 700, borderRadius: 8, padding: '9px 18px' }}
+              >
+                {deleteDeptBusy ? 'Deleting Everything...' : 'Yes, Delete Department & Requisitions'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Requisition Confirmation Popup Modal */}
+      {deleteReqModalOpen && deletingReq && (
+        <Modal open={true} title="Confirm Requisition Deletion" onClose={() => setDeleteReqModalOpen(false)}>
+          <div className="stack" style={{ gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fff1f2', border: '1px solid #fecdd3', padding: 16, borderRadius: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#ffe4e6', color: '#e11d48', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 800, color: '#9f1239' }}>
+                  Do you really want to delete requisition #{deletingReq.id}?
+                </h4>
+                <p style={{ margin: 0, fontSize: 13, color: '#be123c', lineHeight: 1.4 }}>
+                  Position Title: <strong>{deletingReq.title}</strong> ({deletingReq.openings} openings)
+                </p>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: 14, borderRadius: 10, fontSize: 13, color: '#334155' }}>
+              <div><strong>Department:</strong> {deletingReq.department_name}</div>
+              <div><strong>Priority:</strong> {deletingReq.priority || 'Medium'}</div>
+              <div><strong>Assigned Candidates:</strong> {deletingReq.assigned_candidate_count || 0} students</div>
+            </div>
+
+            <div className="flex" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setDeleteReqModalOpen(false)} style={{ fontWeight: 700 }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteReqBusy}
+                onClick={handleConfirmDeleteReq}
+                className="btn"
+                style={{ background: '#e11d48', color: '#ffffff', border: 'none', fontWeight: 700, borderRadius: 8, padding: '9px 18px' }}
+              >
+                {deleteReqBusy ? 'Deleting...' : 'Yes, Delete Requisition'}
+              </button>
+            </div>
           </div>
         </Modal>
       )}
