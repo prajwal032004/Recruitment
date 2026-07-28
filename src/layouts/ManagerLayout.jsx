@@ -21,6 +21,7 @@ export default function ManagerLayout() {
     { to: `/manager/${slug}`, label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: `/manager/${slug}/requests`, label: 'Hiring Requisitions', icon: ClipboardList },
     { to: `/manager/${slug}/candidates`, label: 'Candidate Verification', icon: UserCheck },
+    { to: `/manager/${slug}/pipeline`, label: 'Recruitment Pipeline', icon: KanbanSquare },
   ]
 
   const doLogout = () => {
@@ -99,67 +100,59 @@ export default function ManagerLayout() {
       {/* Main Content */}
       <div className="main">
         {/* Topbar Header */}
-        <header className="topbar" style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', height: 64, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 90 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button className="icon-btn mobile-only" onClick={() => setOpen(true)}>
+        <header className="topbar" style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', minHeight: 64, height: 'auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, zIndex: 90 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button className="icon-btn mobile-only" onClick={() => setOpen(true)} aria-label="Toggle menu">
               <Menu size={20} />
             </button>
 
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
                 {deptName} Manager Workspace
               </div>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>
-                Hiring Requisitions, Candidate Pipelines & Interview Reviews
+                Hiring Requisitions & Candidate Verifications
               </div>
             </div>
           </div>
 
-          <div className="topbar-right flex" style={{ gap: 14, alignItems: 'center' }}>
+          <div className="topbar-right flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <NotificationBell />
 
             {/* User Meta */}
-            <div className="flex" style={{ gap: 10, alignItems: 'center', background: '#f8fafc', padding: '4px 12px 4px 6px', borderRadius: 24, border: '1px solid #e2e8f0' }}>
-              <Avatar name={user?.name || 'Department Manager'} size={32} style={{ border: '2px solid #818cf8' }} />
+            <div className="flex" style={{ gap: 8, alignItems: 'center', background: '#f8fafc', padding: '4px 10px 4px 6px', borderRadius: 24, border: '1px solid #e2e8f0' }}>
+              <Avatar name={user?.name || 'Department Manager'} size={30} style={{ border: '2px solid #818cf8' }} />
               <div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>{user?.name}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{user?.name || 'Manager'}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase' }}>
                   {user?.title || 'Dept Manager'}
                 </div>
               </div>
             </div>
 
-            {/* Department Switcher Dropdown */}
-            <div style={{ position: 'relative' }}>
-              <select
-                value={slug}
-                onChange={(e) => navigate(`/manager/${e.target.value}/login`)}
-                style={{
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  borderRadius: 10,
-                  padding: '6px 14px',
-                  cursor: 'pointer',
-                  height: 36,
-                  background: '#f8fafc',
-                  border: '1.5px solid #cbd5e1',
-                  color: '#0f172a',
-                  outline: 'none',
-                  minWidth: 165
-                }}
-              >
-                {ALL_DEPTS.map((d) => (
-                  <option key={d.slug} value={d.slug}>
-                    {d.name} Portal
-                  </option>
-                ))}
-              </select>
+            {/* Department Portal Badge */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 20,
+                padding: '6px 14px',
+                background: '#eef2ff',
+                border: '1px solid #c7d2fe',
+                color: '#4f46e5'
+              }}
+            >
+              <Building2 size={14} style={{ color: '#4338ca' }} />
+              <span>{deptName} Portal</span>
             </div>
           </div>
         </header>
 
         {/* Content Outlet */}
-        <main className="content" style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
+        <main className="content" style={{ padding: '20px 20px 40px 20px', maxWidth: 1400, margin: '0 auto' }}>
           <Outlet />
         </main>
       </div>

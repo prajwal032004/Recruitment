@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Users, UserCheck, CheckCircle2, Plus, Clock, TrendingUp,
-  AlertCircle, ChevronRight, FileText, CalendarClock, Award, Building2
+  AlertCircle, ChevronRight, FileText, CalendarClock, Award, Building2, KanbanSquare
 } from 'lucide-react'
 import { apiGet } from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
@@ -28,7 +28,7 @@ export default function ManagerDashboard() {
     try {
       const [sData, reqsData] = await Promise.all([
         apiGet(`/manager/dashboard-stats?dept_slug=${slug}`),
-        apiGet('/manager/hiring-requests')
+        apiGet(`/manager/hiring-requests?dept_slug=${slug}`)
       ])
       setStats(sData || {})
       setHiringRequests(reqsData || [])
@@ -49,9 +49,10 @@ export default function ManagerDashboard() {
     <div style={{ paddingBottom: 50 }}>
       {/* Top Banner */}
       <div
+        className="dept-mgr-hero mb-24"
         style={{
           background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #831f51 100%)',
-          borderRadius: 16,
+          borderRadius: 18,
           padding: '24px 30px',
           color: '#ffffff',
           boxShadow: '0 10px 25px -5px rgba(49, 46, 129, 0.3)',
@@ -59,40 +60,68 @@ export default function ManagerDashboard() {
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 20,
-          marginBottom: 24
+          gap: 20
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: 'rgba(255,255,255,0.15)', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-            <Building2 size={14} />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', borderRadius: 20, fontSize: 11.5, fontWeight: 700, marginBottom: 10, letterSpacing: '0.5px' }}>
+            <Building2 size={14} color="#38bdf8" />
             <span>{deptName} DEPARTMENT PORTAL</span>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.3px', color: '#ffffff' }}>
             Welcome, {user?.name || 'Department Manager'}
           </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: 13.5, color: '#e0e7ff', maxWidth: 580 }}>
-            Submit hiring requirements, cross-verify candidate submissions, and monitor recruitment progress.
+          <p style={{ margin: 0, fontSize: 13.5, color: '#e0e7ff', maxWidth: 580, lineHeight: 1.5 }}>
+            Submit position requisitions, cross-verify assigned candidate submissions, and track candidate pipeline progression.
           </p>
         </div>
 
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="btn btn-primary"
-          style={{
-            background: '#ffffff',
-            color: '#312e81',
-            borderRadius: 10,
-            padding: '10px 20px',
-            fontSize: 14,
-            fontWeight: 700,
-            border: 'none',
-            boxShadow: '0 6px 16px rgba(0,0,0,0.12)'
-          }}
-        >
-          <Plus size={18} color="#312e81" />
-          <span>New Hiring Request</span>
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="btn dept-mgr-hero-btn"
+            style={{
+              background: '#ffffff',
+              color: '#312e81',
+              borderRadius: 12,
+              padding: '12px 22px',
+              fontSize: 14,
+              fontWeight: 700,
+              border: 'none',
+              boxShadow: '0 6px 18px rgba(0,0,0,0.15)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Plus size={18} color="#312e81" />
+            <span>Raise Hiring Request</span>
+          </button>
+
+          <Link
+            to={`/manager/${slug}/pipeline`}
+            className="btn"
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              color: '#ffffff',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: 12,
+              padding: '12px 20px',
+              fontSize: 14,
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              textDecoration: 'none'
+            }}
+          >
+            <KanbanSquare size={18} />
+            <span>Track Pipeline</span>
+          </Link>
+        </div>
       </div>
 
       {/* Metric Cards Grid */}

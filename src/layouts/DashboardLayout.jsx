@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from '../components/UI'
 import NotificationBell from '../components/NotificationBell'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 const NAV = {
   ADMIN: [
@@ -285,7 +286,11 @@ export default function DashboardLayout() {
             </div>
           </div>
         </header>
-        <main className="content"><Outlet /></main>
+        <main className="content">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
       </div>
 
       {open && <div className="backdrop mobile-only" onClick={() => setOpen(false)} />}

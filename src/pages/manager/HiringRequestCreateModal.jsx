@@ -247,12 +247,12 @@ export default function HiringRequestCreateModal({ isOpen, open, onClose, onCrea
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
             <div className="field" style={{ margin: 0 }}>
               <label style={{ fontWeight: 700, fontSize: 12.5, color: '#334155', display: 'block', marginBottom: 6 }}>
-                Budget Min ($)
+                Budget Min (₹ / INR)
               </label>
               <input
                 type="number"
                 className="input"
-                placeholder="e.g. 80000"
+                placeholder="600000"
                 value={form.budget_min}
                 onChange={setField('budget_min')}
                 style={{ borderRadius: 8, height: 42 }}
@@ -261,12 +261,12 @@ export default function HiringRequestCreateModal({ isOpen, open, onClose, onCrea
 
             <div className="field" style={{ margin: 0 }}>
               <label style={{ fontWeight: 700, fontSize: 12.5, color: '#334155', display: 'block', marginBottom: 6 }}>
-                Budget Max ($)
+                Budget Max (₹ / INR)
               </label>
               <input
                 type="number"
                 className="input"
-                placeholder="e.g. 120000"
+                placeholder="1500000"
                 value={form.budget_max}
                 onChange={setField('budget_max')}
                 style={{ borderRadius: 8, height: 42 }}

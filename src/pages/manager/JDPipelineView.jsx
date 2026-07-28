@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  KanbanSquare, UserPlus, Calendar, Star, CheckCircle, XCircle, Clock,
-  FileText, ShieldCheck, ArrowRight, UserCheck, AlertCircle, Filter, Plus, ChevronRight
+  KanbanSquare, Calendar, Star, CheckCircle, XCircle, Clock,
+  FileText, ShieldCheck, ArrowRight, UserCheck, AlertCircle, Filter, ChevronRight, Eye, Mail, Phone, Award
 } from 'lucide-react'
-import { apiGet, apiPost, apiPut } from '../../api/client'
+import { apiGet } from '../../api/client'
 import { useToast } from '../../contexts/ToastContext'
 import { LoadingSpinner, Avatar, Badge, Modal } from '../../components/UI'
 
@@ -19,40 +19,9 @@ export default function JDPipelineView() {
   const [activeJobId, setActiveJobId] = useState(jobId ? parseInt(jobId) : null)
   const [allJobs, setAllJobs] = useState([])
 
-  // Modal states
-  const [sourceModal, setSourceModal] = useState(false)
-  const [sourceForm, setSourceForm] = useState({ name: '', email: '', phone: '', skills: '', experience_years: 2 })
-  const [sourcingBusy, setSourcingBusy] = useState(false)
-
   const [selectedApp, setSelectedApp] = useState(null)
   const [detailModal, setDetailModal] = useState(false)
   const [appHistory, setAppHistory] = useState([])
-
-  // Schedule Interview modal
-  const [scheduleModal, setScheduleModal] = useState(false)
-  const [schedForm, setSchedForm] = useState({
-    round_no: 1,
-    round_name: 'Interview Round 1',
-    mode: 'Online',
-    scheduled_at: '',
-    location: 'Google Meet / MS Teams Link',
-    instructions: 'Technical depth & architecture assessment'
-  })
-  const [schedBusy, setSchedBusy] = useState(false)
-
-  // Feedback & Pass/Fail Verdict Modal
-  const [verdictModal, setVerdictModal] = useState(false)
-  const [verdictForm, setVerdictForm] = useState({
-    verdict: 'Pass', // Pass or Fail
-    overall_rating: 5,
-    technical: 5,
-    problem_solving: 4,
-    communication: 5,
-    strengths: 'Excellent technical clarity and domain knowledge',
-    concerns: 'None',
-    comments: 'Strong recommendation to advance'
-  })
-  const [verdictBusy, setVerdictBusy] = useState(false)
 
   const PIPELINE_STAGES = [
     'Applied', 'Resume Screening', 'Shortlisted', 'Assessment',
@@ -65,7 +34,7 @@ export default function JDPipelineView() {
     let active = true
     async function loadDepartmentJobs() {
       try {
-        const reqs = await apiGet('/manager/hiring-requests')
+        const reqs = await apiGet(`/manager/hiring-requests?dept_slug=${slug}`)
         if (active && reqs && reqs.length > 0) {
           const validJobs = reqs.filter(r => r.job_id).map(r => ({
             job_id: r.job_id,
@@ -98,175 +67,112 @@ export default function JDPipelineView() {
           setPipelineData(res)
         }
       } catch (err) {
-        toast.error(err.message || 'Failed to load candidate pipeline for this position.')
+        toast.error(err.message || 'Failed to load recruitment pipeline.')
       } finally {
         if (active) setLoading(false)
       }
     }
     fetchPipeline()
+    return () => { active = false }
   }, [activeJobId])
 
-  // Add Candidate to Applied Section
-  const handleSourceCandidate = async (e) => {
-    e.preventDefault()
-    if (!sourceForm.name || !sourceForm.email) return toast.error('Name and Email are required.')
-    setSourcingBusy(true)
-    try {
-      const activeReq = allJobs.find(j => j.job_id === activeJobId)
-      const reqId = activeReq ? activeReq.req_id : 1
-      const res = await apiPost(`/manager/hiring-requests/${reqId}/source-candidate`, sourceForm)
-      toast.success(`Candidate ${sourceForm.name} added to 'Applied' section!`)
-      setSourceModal(false)
-      setSourceForm({ name: '', email: '', phone: '', skills: '', experience_years: 2 })
-      // Refresh pipeline
-      const fresh = await apiGet(`/manager/jd-pipeline/${activeJobId}`)
-      setPipelineData(fresh)
-    } catch (err) {
-      toast.error(err.message || 'Failed to add candidate.')
-    } finally {
-      setSourcingBusy(false)
-    }
-  }
-
-  // Open detail modal for candidate
+  // Open Application Detail Modal (Read-Only)
   const openAppDetail = async (app) => {
     setSelectedApp(app)
     setDetailModal(true)
     try {
       const res = await apiGet(`/applications/${app.id}`)
-      setSelectedApp(res)
-      setAppHistory(res.history || [])
+      if (res) {
+        setSelectedApp(res.application || res)
+        setAppHistory(res.stage_history || res.history || [])
+      }
     } catch (err) {
-      console.error(err)
+      console.error('Failed to load application history:', err)
     }
   }
 
-  // Schedule Interview
-  const handleScheduleInterview = async (e) => {
-    e.preventDefault()
-    if (!selectedApp) return
-    setSchedBusy(true)
-    try {
-      await apiPost('/interviews', {
-        application_id: selectedApp.id,
-        round_no: schedForm.round_no,
-        round_name: schedForm.round_name,
-        mode: schedForm.mode,
-        scheduled_at: schedForm.scheduled_at || new Date().toISOString(),
-        location: schedForm.location,
-        instructions: schedForm.instructions
-      })
-      toast.success(`Interview Scheduled: ${schedForm.round_name} for ${selectedApp.candidate_name}!`)
-      setScheduleModal(false)
-      // Refresh application detail
-      const res = await apiGet(`/applications/${selectedApp.id}`)
-      setSelectedApp(res)
-      const fresh = await apiGet(`/manager/jd-pipeline/${activeJobId}`)
-      setPipelineData(fresh)
-    } catch (err) {
-      toast.error(err.message || 'Failed to schedule interview.')
-    } finally {
-      setSchedBusy(false)
-    }
-  }
-
-  // Submit Pass / Fail Verdict & Automated Stage Progression
-  const handleSubmitVerdict = async (iid, verdict) => {
-    if (!selectedApp) return
-    setVerdictBusy(true)
-    try {
-      const res = await apiPost(`/interviews/${iid}/verdict`, {
-        verdict: verdict,
-        overall_rating: verdictForm.overall_rating,
-        technical: verdictForm.technical,
-        problem_solving: verdictForm.problem_solving,
-        communication: verdictForm.communication,
-        strengths: verdictForm.strengths,
-        concerns: verdictForm.concerns,
-        comments: verdictForm.comments
-      })
-      toast.success(`Verdict '${verdict}' recorded! ${verdict === 'Pass' ? 'Candidate automatically advanced to next stage.' : 'Candidate moved to Rejected.'}`)
-      setVerdictModal(false)
-      // Refresh detail & pipeline
-      const updated = await apiGet(`/applications/${selectedApp.id}`)
-      setSelectedApp(updated)
-      setAppHistory(updated.history || [])
-      const fresh = await apiGet(`/manager/jd-pipeline/${activeJobId}`)
-      setPipelineData(fresh)
-    } catch (err) {
-      toast.error(err.message || 'Failed to record verdict.')
-    } finally {
-      setVerdictBusy(false)
-    }
-  }
-
-  // Manual Stage Change
-  const handleStageChange = async (appId, newStage) => {
-    try {
-      await apiPut(`/applications/${appId}/stage`, { stage: newStage })
-      toast.success(`Candidate stage moved to ${newStage}`)
-      const updated = await apiGet(`/applications/${appId}`)
-      setSelectedApp(updated)
-      const fresh = await apiGet(`/manager/jd-pipeline/${activeJobId}`)
-      setPipelineData(fresh)
-    } catch (err) {
-      toast.error(err.message || 'Failed to update stage.')
-    }
-  }
-
-  if (loading && !pipelineData) return <LoadingSpinner full label="Loading Independent JD Recruitment Pipeline..." />
+  if (loading && !pipelineData) return <LoadingSpinner full label="Loading Department Recruitment Pipeline..." />
 
   const jobTitle = pipelineData?.job?.title || 'Selected Requisition'
 
   return (
-    <div className="stack" style={{ gap: 24 }}>
-      
-      {/* Header bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, background: '#ffffff', padding: 20, borderRadius: 16, border: '1px solid #e2e8f0' }}>
+    <div className="stack" style={{ gap: 24, maxWidth: 1400, margin: '0 auto', paddingBottom: 50 }}>
+      {/* Read-Only Top Header Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          padding: '24px 28px',
+          borderRadius: 20,
+          color: '#ffffff',
+          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.25)'
+        }}
+      >
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Independent Recruitment Pipeline
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '4px 12px',
+                borderRadius: 20,
+                background: 'rgba(56, 189, 248, 0.15)',
+                color: '#38bdf8',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                textTransform: 'uppercase',
+                letterSpacing: 0.6
+              }}
+            >
+              READ ONLY CANDIDATE TRACKING DESK
+            </span>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: '2px 0 0 0', color: '#0f172a' }}>
+
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px 0', color: '#ffffff' }}>
             {jobTitle}
           </h1>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-            Isolated candidate tracking per Job Description (JD) without data mixing
-          </div>
+
+          <p style={{ margin: 0, fontSize: 13.5, color: '#cbd5e1', maxWidth: 640 }}>
+            Track real-time stage progression of your department candidates as they advance through interview rounds, assessments, and offer stages.
+          </p>
         </div>
 
         <div className="flex wrap" style={{ gap: 12, alignItems: 'center' }}>
           {/* Position Selector */}
           {allJobs.length > 0 && (
             <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-              <Filter size={16} color="#64748b" />
+              <Filter size={16} color="#94a3b8" />
               <select
                 className="input"
                 value={activeJobId || ''}
                 onChange={(e) => setActiveJobId(parseInt(e.target.value))}
-                style={{ borderRadius: 8, height: 40, fontWeight: 700, fontSize: 13 }}
+                style={{
+                  borderRadius: 10,
+                  height: 42,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  background: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid #334155',
+                  cursor: 'pointer',
+                  padding: '0 14px'
+                }}
               >
                 {allJobs.map(j => (
                   <option key={j.job_id} value={j.job_id}>
-                    JD: {j.title} ({j.openings} openings)
+                    Position: {j.title} ({j.openings} openings)
                   </option>
                 ))}
               </select>
             </div>
           )}
-
-          <button
-            onClick={() => setSourceModal(true)}
-            className="btn-primary flex"
-            style={{ gap: 8, borderRadius: 8, height: 40, padding: '0 18px', fontWeight: 700, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-          >
-            <UserPlus size={18} />
-            <span>Add / Source Candidate to 'Applied'</span>
-          </button>
         </div>
       </div>
 
-      {/* Kanban Board - Horizontally scrollable container */}
+      {/* Kanban Board Container - Read Only Pipeline */}
       <div
         style={{
           display: 'flex',
@@ -284,11 +190,12 @@ export default function JDPipelineView() {
               style={{
                 flex: '0 0 280px',
                 background: '#f8fafc',
-                borderRadius: 14,
+                borderRadius: 16,
                 border: '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: 'column',
                 maxHeight: '75vh',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.02)'
               }}
             >
               {/* Column Header */}
@@ -300,18 +207,19 @@ export default function JDPipelineView() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   background: '#ffffff',
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14,
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
                 }}
               >
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>{stage}</span>
                 </div>
+
                 <span
                   style={{
                     fontSize: 12,
                     fontWeight: 800,
-                    padding: '2px 8px',
+                    padding: '2px 9px',
                     borderRadius: 12,
                     background: stageApps.length > 0 ? '#4f46e5' : '#e2e8f0',
                     color: stageApps.length > 0 ? '#ffffff' : '#64748b',
@@ -324,7 +232,7 @@ export default function JDPipelineView() {
               {/* Candidates List */}
               <div style={{ padding: 12, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {stageApps.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px 10px', color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>
+                  <div style={{ textAlign: 'center', padding: '36px 10px', color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>
                     No candidates in {stage}
                   </div>
                 ) : (
@@ -335,21 +243,21 @@ export default function JDPipelineView() {
                       className="card"
                       style={{
                         padding: 14,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         background: '#ffffff',
                         border: '1px solid #cbd5e1',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                        transition: 'transform 0.15s ease, boxShadow 0.15s ease'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                        <Avatar name={app.candidate_name} size={32} />
-                        <div>
-                          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                        <Avatar name={app.candidate_name} size={34} style={{ border: '2px solid #818cf8' }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {app.candidate_name}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>
+                          <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {app.candidate_email}
                           </div>
                         </div>
@@ -358,16 +266,19 @@ export default function JDPipelineView() {
                       {app.candidate_skills && app.candidate_skills.length > 0 && (
                         <div className="flex wrap" style={{ gap: 4, marginBottom: 8 }}>
                           {app.candidate_skills.slice(0, 3).map((s, idx) => (
-                            <span key={idx} style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', background: '#f1f5f9', borderRadius: 4, color: '#475569' }}>
+                            <span key={idx} style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', background: '#e0e7ff', borderRadius: 4, color: '#3730a3' }}>
                               {s}
                             </span>
                           ))}
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: 8 }}>
                         <span style={{ fontWeight: 600 }}>Source: {app.source || 'DIRECT'}</span>
-                        <ChevronRight size={14} color="#94a3b8" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 2, color: '#4f46e5', fontWeight: 700 }}>
+                          <span>View Info</span>
+                          <Eye size={12} />
+                        </div>
                       </div>
                     </div>
                   ))
@@ -378,207 +289,126 @@ export default function JDPipelineView() {
         })}
       </div>
 
-      {/* Source Candidate Modal */}
-      <Modal isOpen={sourceModal} onClose={() => setSourceModal(false)} title={`Add / Source Candidate for ${jobTitle}`}>
-        <form onSubmit={handleSourceCandidate} className="stack" style={{ gap: 16 }}>
-          <div className="field">
-            <label style={{ fontWeight: 700, fontSize: 13 }}>Candidate Full Name *</label>
-            <input type="text" className="input" required value={sourceForm.name} onChange={(e) => setSourceForm({ ...sourceForm, name: e.target.value })} placeholder="e.g. Alex Johnson" />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Email Address *</label>
-              <input type="email" className="input" required value={sourceForm.email} onChange={(e) => setSourceForm({ ...sourceForm, email: e.target.value })} placeholder="alex@example.com" />
-            </div>
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Phone Number</label>
-              <input type="text" className="input" value={sourceForm.phone} onChange={(e) => setSourceForm({ ...sourceForm, phone: e.target.value })} placeholder="+1 555-0192" />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Skills (Comma Separated)</label>
-              <input type="text" className="input" value={sourceForm.skills} onChange={(e) => setSourceForm({ ...sourceForm, skills: e.target.value })} placeholder="React, Node.js, Python" />
-            </div>
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Experience (Years)</label>
-              <input type="number" step="0.5" className="input" value={sourceForm.experience_years} onChange={(e) => setSourceForm({ ...sourceForm, experience_years: e.target.value })} />
-            </div>
-          </div>
-
-          <div className="flex" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-            <button type="button" onClick={() => setSourceModal(false)} className="btn-ghost">Cancel</button>
-            <button type="submit" disabled={sourcingBusy} className="btn-primary" style={{ background: '#10b981' }}>
-              {sourcingBusy ? 'Adding Candidate...' : 'Add to Applied Section'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Candidate Detail & Pass/Fail Evaluation Modal */}
-      <Modal isOpen={detailModal} onClose={() => setDetailModal(false)} title={`Candidate Evaluation: ${selectedApp?.candidate_name || 'Details'}`}>
-        {selectedApp && (
+      {/* Read-Only Candidate Progress & Evaluation Modal */}
+      {detailModal && selectedApp && (
+        <Modal
+          open={true}
+          onClose={() => setDetailModal(false)}
+          title={`Candidate Tracking View: ${selectedApp.candidate_name || 'Details'}`}
+          width={680}
+        >
           <div className="stack" style={{ gap: 20 }}>
-            {/* Header info */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-              <Avatar name={selectedApp.candidate_name} size={48} />
+            {/* Header info card */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', padding: '18px 22px', borderRadius: 16, color: '#ffffff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <Avatar name={selectedApp.candidate_name} size={48} style={{ border: '2px solid #818cf8' }} />
+                <div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: 18, fontWeight: 800, color: '#ffffff' }}>
+                    {selectedApp.candidate_name}
+                  </h3>
+                  <div style={{ fontSize: 12.5, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span><Mail size={12} style={{ display: 'inline', marginRight: 3 }} />{selectedApp.candidate_email}</span>
+                    {selectedApp.candidate_phone && <span><Phone size={12} style={{ display: 'inline', marginRight: 3 }} />{selectedApp.candidate_phone}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <Badge variant={selectedApp.stage === 'Hired' || selectedApp.stage === 'Offered' ? 'success' : selectedApp.stage === 'Rejected' ? 'danger' : 'info'}>
+                  {selectedApp.stage || 'Applied'}
+                </Badge>
+                <div style={{ fontSize: 11.5, color: '#38bdf8', fontWeight: 700, marginTop: 4 }}>
+                  Match Score: {selectedApp.match_score ? Math.round(selectedApp.match_score) : 85}%
+                </div>
+              </div>
+            </div>
+
+            {/* Read-Only Current Stage Status Banner */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{selectedApp.candidate_name}</h3>
-                <div style={{ fontSize: 13, color: '#64748b' }}>{selectedApp.candidate_email} • {selectedApp.candidate_phone || 'No Phone'}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <Badge variant="badge-violet">Stage: {selectedApp.stage}</Badge>
-                  <Badge variant={selectedApp.status === 'Rejected' ? 'badge-red' : 'badge-green'}>Status: {selectedApp.status}</Badge>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Current Pipeline Location</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#4f46e5', marginTop: 2 }}>
+                  {selectedApp.stage || 'Applied'}
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Candidate Status</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: selectedApp.status === 'Rejected' ? '#ef4444' : '#10b981', marginTop: 2 }}>
+                  {selectedApp.status || 'Active'}
                 </div>
               </div>
             </div>
 
-            {/* Quick Stage Transitions */}
+            {/* Scheduled Interviews & Evaluation History (Read-Only) */}
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>
-                Advance or Move Stage Manually
-              </div>
-              <div className="flex wrap" style={{ gap: 6 }}>
-                {PIPELINE_STAGES.map(st => (
-                  <button
-                    key={st}
-                    onClick={() => handleStageChange(selectedApp.id, st)}
-                    className={`btn-sm ${selectedApp.stage === st ? 'btn-primary' : 'btn-ghost'}`}
-                    style={{ fontSize: 11, padding: '3px 8px' }}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Scheduled Interviews & Pass/Fail evaluation list */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>
-                  Interview Rounds & Evaluation Verdicts
-                </div>
-                <button
-                  onClick={() => setScheduleModal(true)}
-                  className="btn-primary btn-sm flex"
-                  style={{ gap: 6, borderRadius: 6 }}
-                >
-                  <Calendar size={14} /> Schedule Interview Round
-                </button>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', marginBottom: 10 }}>
+                Interview Rounds & Evaluation Verdicts
               </div>
 
               {selectedApp.interviews && selectedApp.interviews.length > 0 ? (
                 <div className="stack" style={{ gap: 10 }}>
                   {selectedApp.interviews.map(iv => (
-                    <div key={iv.id} style={{ padding: 14, borderRadius: 10, border: '1px solid #cbd5e1', background: '#ffffff' }}>
+                    <div key={iv.id} style={{ padding: 14, borderRadius: 12, border: '1px solid #cbd5e1', background: '#ffffff' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
                           <strong style={{ fontSize: 14, color: '#0f172a' }}>{iv.round_name}</strong>
-                          <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>({iv.mode})</span>
+                          <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>({iv.mode || 'Online'})</span>
                         </div>
-                        <Badge variant={iv.result === 'Pass' ? 'badge-green' : iv.result === 'Fail' ? 'badge-red' : 'badge-yellow'}>
+                        <Badge variant={iv.result === 'Pass' ? 'success' : iv.result === 'Fail' ? 'danger' : 'warning'}>
                           Verdict: {iv.result || 'Pending'}
                         </Badge>
                       </div>
 
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Location/Link: {iv.location || 'Online'}
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+                        Interviewer / Location: {iv.location || 'Online'}
                       </div>
 
-                      {/* Action to submit Pass/Fail verdict */}
-                      <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
-                        <button
-                          onClick={() => handleSubmitVerdict(iv.id, 'Pass')}
-                          className="btn-sm flex"
-                          style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, gap: 4, fontWeight: 700 }}
-                        >
-                          <CheckCircle size={14} /> Mark Pass (Advance Stage)
-                        </button>
-                        <button
-                          onClick={() => handleSubmitVerdict(iv.id, 'Fail')}
-                          className="btn-sm flex"
-                          style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, gap: 4, fontWeight: 700 }}
-                        >
-                          <XCircle size={14} /> Mark Fail (Reject Candidate)
-                        </button>
-                      </div>
+                      {iv.feedback_notes && (
+                        <div style={{ marginTop: 8, padding: 8, background: '#f8fafc', borderRadius: 8, fontSize: 12, color: '#334155', fontStyle: 'italic' }}>
+                          {iv.feedback_notes}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: 16, background: '#f8fafc', borderRadius: 8, textAlign: 'center', color: '#64748b', fontSize: 13 }}>
-                  No interviews scheduled yet for this candidate. Click 'Schedule Interview Round' above.
+                <div style={{ padding: 16, background: '#f8fafc', borderRadius: 10, textAlign: 'center', color: '#64748b', fontSize: 13, border: '1px dashed #cbd5e1' }}>
+                  No interview rounds recorded yet for this candidate.
                 </div>
               )}
             </div>
 
-            {/* Stage Change Decision Logs */}
+            {/* Complete Progression History Timeline */}
             {appHistory.length > 0 && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
-                  Complete Decision & Progression History
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 10 }}>
+                  Progression History & Movement Logs
                 </div>
-                <div className="stack" style={{ gap: 6, maxHeight: 150, overflowY: 'auto' }}>
-                  {appHistory.map(h => (
-                    <div key={h.id} style={{ fontSize: 12, padding: '6px 10px', background: '#f1f5f9', borderRadius: 6, display: 'flex', justifyContent: 'space-between' }}>
-                      <span><strong>{h.to_stage}</strong> — {h.note}</span>
-                      <span style={{ color: '#64748b' }}>by {h.by}</span>
+                <div className="stack" style={{ gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+                  {appHistory.map((h, i) => (
+                    <div key={i} style={{ fontSize: 12, padding: '8px 12px', background: '#f1f5f9', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span><strong>{h.to_stage}</strong> - {h.note || 'Stage updated'}</span>
+                      <span style={{ color: '#64748b', fontSize: 11 }}>by {h.by || h.changed_by_name || 'System'}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </Modal>
 
-      {/* Schedule Interview Modal */}
-      <Modal isOpen={scheduleModal} onClose={() => setScheduleModal(false)} title={`Schedule Interview Round for ${selectedApp?.candidate_name}`}>
-        <form onSubmit={handleScheduleInterview} className="stack" style={{ gap: 14 }}>
-          <div className="field">
-            <label style={{ fontWeight: 700, fontSize: 13 }}>Select Interview Round</label>
-            <select
-              className="input"
-              value={schedForm.round_name}
-              onChange={(e) => setSchedForm({ ...schedForm, round_name: e.target.value })}
-            >
-              <option value="Interview Round 1">Interview Round 1 (Technical Screening)</option>
-              <option value="Interview Round 2">Interview Round 2 (System Design / Deep Dive)</option>
-              <option value="Managerial Interview">Managerial Interview (Culture & Alignment)</option>
-              <option value="HR Interview">HR Interview (Compensation & Background)</option>
-            </select>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Mode</label>
-              <select className="input" value={schedForm.mode} onChange={(e) => setSchedForm({ ...schedForm, mode: e.target.value })}>
-                <option value="Online">Online Video Call</option>
-                <option value="In-Person">In-Person Office</option>
-                <option value="Phone">Phone Screen</option>
-              </select>
-            </div>
-
-            <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 13 }}>Meeting Link / Location</label>
-              <input type="text" className="input" value={schedForm.location} onChange={(e) => setSchedForm({ ...schedForm, location: e.target.value })} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setDetailModal(false)}
+                style={{ fontWeight: 700 }}
+              >
+                Close Tracking View
+              </button>
             </div>
           </div>
-
-          <div className="field">
-            <label style={{ fontWeight: 700, fontSize: 13 }}>Instructions for Interviewer</label>
-            <textarea className="input" rows={2} value={schedForm.instructions} onChange={(e) => setSchedForm({ ...schedForm, instructions: e.target.value })} />
-          </div>
-
-          <div className="flex" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-            <button type="button" onClick={() => setScheduleModal(false)} className="btn-ghost">Cancel</button>
-            <button type="submit" disabled={schedBusy} className="btn-primary">
-              {schedBusy ? 'Scheduling...' : 'Confirm Schedule'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+        </Modal>
+      )}
     </div>
   )
 }

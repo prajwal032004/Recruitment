@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, FileCheck, FileX, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Send, FileCheck, FileX, CheckCircle2, Eye, Users } from 'lucide-react'
 import { apiGet, apiPost, baseURL } from '../../api/client'
 import { useFetch } from '../../components/hooks'
-import { LoadingSpinner, ErrorState, EmptyState, PageHeader, Badge } from '../../components/UI'
+import { LoadingSpinner, ErrorState, EmptyState, PageHeader, Badge, Modal } from '../../components/UI'
 import { useToast } from '../../contexts/ToastContext'
 
 export default function CollegeJobDetail() {
@@ -14,12 +14,19 @@ export default function CollegeJobDetail() {
   const { data: studentData } = useFetch(`/college/${slug}/students?per_page=100`, [slug])
   const [selected, setSelected] = useState([])
   const [busy, setBusy] = useState(false)
+  const [viewModalOpen, setViewModalOpen] = useState(false)
 
   if (loading) return <LoadingSpinner />
   if (error) return <ErrorState message={error} onRetry={refetch} />
   const job = data?.job || {}
   const submittedIds = data?.submitted_student_ids || []
+  const submittedCandidates = data?.submitted_candidates || []
   const students = studentData?.items || []
+
+  const openings = job.openings || 1
+  const maxAllowed = data?.max_allowed || (openings + 3)
+  const assignedCount = data?.assigned_count || submittedIds.length
+  const remainingSeats = data?.remaining_seats ?? Math.max(0, maxAllowed - assignedCount)
 
   const submit = async () => {
     if (selected.length === 0) return toast.error('Select students to submit')
@@ -41,8 +48,45 @@ export default function CollegeJobDetail() {
   return (
     <div>
       <button className="btn-ghost btn-sm mb-4" onClick={() => nav(`/${slug}`)}><ArrowLeft size={15} /> Opportunities</button>
-      <PageHeader title={job.title} subtitle={`${job.company || '—'} · ${job.location || '—'}`}
-        actions={<button className="btn-primary" onClick={submit} disabled={busy}><Send size={15} /> Submit Selected ({selected.length})</button>} />
+      <PageHeader
+        title={job.title}
+        subtitle={`${job.company || '—'} · ${job.location || '—'}`}
+        actions={
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {submittedCandidates.length > 0 && (
+              <button className="btn-secondary" onClick={() => setViewModalOpen(true)}>
+                <Eye size={15} /> View Candidates ({submittedCandidates.length})
+              </button>
+            )}
+            <button className="btn-primary" onClick={submit} disabled={busy}>
+              <Send size={15} /> Submit Selected ({selected.length})
+            </button>
+          </div>
+        }
+      />
+
+      {/* Quota Banner */}
+      <div style={{ background: '#f8fafc', padding: '14px 20px', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#eef2ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={18} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
+              Target Quota: {maxAllowed} Candidates ({openings} Openings + 3 Buffer)
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+              Submitted / Assigned: <strong>{assignedCount}</strong> • Remaining Available Seats: <strong style={{ color: remainingSeats > 0 ? '#0284c7' : '#059669' }}>{remainingSeats}</strong>
+            </div>
+          </div>
+        </div>
+
+        {remainingSeats > 0 && (
+          <div style={{ background: '#f0f9ff', color: '#0369a1', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #bae6fd' }}>
+            {remainingSeats} Remaining Seats can be filled by Placement Officer or Admin
+          </div>
+        )}
+      </div>
 
       <div className="two-col">
         <div className="card" style={{ overflow: 'hidden' }}>
@@ -102,6 +146,36 @@ export default function CollegeJobDetail() {
           <p className="muted mt-4" style={{ fontSize: 12 }}>Eligibility is auto-screened when students are submitted. HR sees the results in the pipeline.</p>
         </div>
       </div>
+
+      {/* POP View Candidates Modal */}
+      {viewModalOpen && (
+        <Modal open={true} title={`Submitted Candidates — ${job.title}`} onClose={() => setViewModalOpen(false)} width={680}>
+          <div style={{ marginBottom: 16, background: '#f8fafc', padding: '12px 16px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+              Submissions for {job.title}
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+              Total Candidates: <strong>{submittedCandidates.length}</strong> of <strong>{maxAllowed} Max Capacity</strong> ({openings} Openings + 3 Buffer)
+            </div>
+          </div>
+
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {submittedCandidates.map(c => (
+              <div key={c.application_id || c.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: 8, marginBottom: 8, background: '#ffffff' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>{c.name}</div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>{c.email} • {c.branch || '—'} {c.cgpa ? `• CGPA: ${c.cgpa}` : ''}</div>
+                </div>
+                <Badge variant="badge-green">{c.stage || 'Submitted'}</Badge>
+              </div>
+            ))}
+          </div>
+
+          <div className="row gap-8 justify-end mt-16">
+            <button className="btn-primary" onClick={() => setViewModalOpen(false)}>Close</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -87,42 +87,137 @@ export default function Jobs() {
     setModal(true)
   }
 
+  const [originFilter, setOriginFilter] = useState('ALL')
+
   if (loading) return <LoadingSpinner />
   if (error) return <ErrorState message={error} onRetry={refetch} />
   const stats = data?.stats || {}
+  const rawItems = data?.items || []
+
+  const filteredItems = rawItems.filter(j => {
+    if (originFilter === 'ADMIN') return !j.hiring_request_id
+    if (originFilter === 'MANAGER') return !!j.hiring_request_id
+    return true
+  })
 
   return (
     <div>
-      <PageHeader title="Jobs / Job Descriptions" subtitle="Create JDs, publish to Careers, and assign to colleges." icon={Briefcase}
+      <PageHeader title="Jobs / Job Descriptions (JDs)" subtitle="Manage standard JDs created by Admin and Custom JDs from Manager Requisitions." icon={Briefcase}
         actions={hasRole('ADMIN') && <button className="btn-primary" onClick={() => { setEditId(null); setForm(BLANK); setModal(true); }}><Plus size={16} /> Create JD</button>} />
 
       <div className="grid-stats mb-4">
         <StatCard icon={Briefcase} label="Total JDs" value={stats.total ?? 0} tone="brand" />
-        <StatCard icon={Send} label="Published" value={stats.published ?? 0} tone="green" />
-        <StatCard icon={Briefcase} label="Drafts" value={stats.draft ?? 0} tone="amber" />
-        <StatCard icon={Globe} label="On Careers" value={stats.on_careers ?? 0} tone="violet" />
+        <StatCard icon={Send} label="Admin Custom JDs" value={stats.admin_created ?? 0} tone="violet" />
+        <StatCard icon={Briefcase} label="Manager Requisitions" value={stats.manager_requisitions ?? 0} tone="blue" />
+        <StatCard icon={Globe} label="On Careers Portal" value={stats.on_careers ?? 0} tone="green" />
       </div>
 
-      {(data?.items || []).length === 0 ? (
-        <EmptyState icon={Briefcase} title="No jobs yet" message="Create your first job description to begin hiring." />
+      {/* Origin Filter Bar */}
+      <div className="card mb-4 flex row-between" style={{ padding: '12px 18px', background: '#ffffff', borderRadius: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className={`btn-soft ${originFilter === 'ALL' ? 'active' : ''}`}
+            onClick={() => setOriginFilter('ALL')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              background: originFilter === 'ALL' ? 'var(--brand-500)' : '#f1f5f9',
+              color: originFilter === 'ALL' ? '#ffffff' : 'var(--text-2)'
+            }}
+          >
+            All JDs ({rawItems.length})
+          </button>
+
+          <button
+            className={`btn-soft ${originFilter === 'ADMIN' ? 'active' : ''}`}
+            onClick={() => setOriginFilter('ADMIN')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              background: originFilter === 'ADMIN' ? '#8b5cf6' : '#f1f5f9',
+              color: originFilter === 'ADMIN' ? '#ffffff' : 'var(--text-2)'
+            }}
+          >
+            Admin Created ({stats.admin_created ?? 0})
+          </button>
+
+          <button
+            className={`btn-soft ${originFilter === 'MANAGER' ? 'active' : ''}`}
+            onClick={() => setOriginFilter('MANAGER')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              background: originFilter === 'MANAGER' ? '#0284c7' : '#f1f5f9',
+              color: originFilter === 'MANAGER' ? '#ffffff' : 'var(--text-2)'
+            }}
+          >
+            Manager Requisition Custom JDs ({stats.manager_requisitions ?? 0})
+          </button>
+        </div>
+
+        <div className="muted" style={{ fontSize: 12.5, fontWeight: 600 }}>
+          Click any JD row to view full details or manage college assignments
+        </div>
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <EmptyState icon={Briefcase} title="No jobs matching filter" message="Create a new job description or adjust your search filter." />
       ) : (
-        <div className="card" style={{ padding: 0 }}>
+        <div className="card" style={{ padding: 0, borderRadius: 14, overflow: 'hidden' }}>
           <table className="data">
-            <thead><tr><th>Title</th><th>Company</th><th>Status</th><th>Careers</th><th>Apps</th><th>Deadline</th>{hasRole('ADMIN') && <th>Actions</th>}</tr></thead>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type / Origin</th>
+                <th>Department & Manager</th>
+                <th>Status</th>
+                <th>Careers</th>
+                <th>Applicants</th>
+                <th>Colleges</th>
+                {hasRole('ADMIN') && <th>Actions</th>}
+              </tr>
+            </thead>
             <tbody>
-              {data.items.map((j) => (
+              {filteredItems.map((j) => (
                 <tr key={j.id} style={{ cursor: 'pointer' }} onClick={() => nav(`/app/jobs/${j.id}`)}>
-                  <td><strong>{j.title}</strong></td>
-                  <td className="muted">{j.company || '—'}</td>
-                  <td><Badge variant={j.status === 'Published' ? 'badge-green' : j.status === 'Closed' ? 'badge-red' : 'badge-gray'}>{j.status}</Badge></td>
+                  <td>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{j.title}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>{j.company || 'MPC Cloud Consulting'} • {j.employment_type || 'Full-time'}</div>
+                  </td>
+                  <td>
+                    {j.is_manager_requisition ? (
+                      <Badge variant="badge-blue">Manager Requisition</Badge>
+                    ) : (
+                      <Badge variant="badge-violet">Admin Custom JD</Badge>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{j.department_name || 'General'}</div>
+                    <div className="muted" style={{ fontSize: 11.5 }}>{j.manager_name ? `Mgr: ${j.manager_name}` : 'HR Team'}</div>
+                  </td>
+                  <td><Badge variant={j.status === 'Published' || j.status === 'Active' ? 'badge-green' : j.status === 'Closed' ? 'badge-red' : 'badge-gray'}>{j.status}</Badge></td>
                   <td>{j.published_to_careers ? <Badge variant="badge-violet">Live</Badge> : <span className="muted">—</span>}</td>
-                  <td>{j.application_count}</td>
-                  <td className="muted">{j.deadline ? fmtDate(j.deadline) : '—'}</td>
+                  <td><strong style={{ color: '#0284c7' }}>{j.application_count}</strong></td>
+                  <td><span className="muted">{j.assigned_colleges_count || 0} shared</span></td>
                   {hasRole('ADMIN') && (
                     <td>
-                      <div className="flex gap-2">
-                        <button className="icon-btn" onClick={(e) => handleEdit(e, j)} title="Edit"><Pencil size={16} /></button>
-                        <button className="icon-btn" style={{ color: 'var(--red-500)' }} onClick={(e) => handleDelete(e, j.id)} title="Delete"><Trash2 size={16} /></button>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="btn-soft"
+                          style={{ padding: '4px 10px', fontSize: 11.5, fontWeight: 700, background: '#eef2ff', color: '#4f46e5', border: '1px solid #c7d2fe' }}
+                          onClick={() => nav(`/app/pipeline?job_id=${j.id}`)}
+                          title="View Recruitment Pipeline"
+                        >
+                          Pipeline
+                        </button>
+                        <button className="icon-btn" onClick={(e) => handleEdit(e, j)} title="Edit"><Pencil size={15} /></button>
+                        <button className="icon-btn" style={{ color: 'var(--red-500)' }} onClick={(e) => handleDelete(e, j.id)} title="Delete"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   )}

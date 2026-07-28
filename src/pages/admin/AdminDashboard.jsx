@@ -1,4 +1,4 @@
-import { Users, Briefcase, Building2, CalendarClock, Award, GraduationCap, FileText, TrendingUp, ArrowRight, UserRoundCheck } from 'lucide-react'
+import { Users, Briefcase, Building2, CalendarClock, Award, GraduationCap, FileText, TrendingUp, ArrowRight, UserRoundCheck, ClipboardList, CheckCircle2, Clock, UserPlus, Layers } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
 import { useFetch, CHART_COLORS } from '../../components/hooks'
 import { LoadingSpinner, ErrorState, StatCard, PageHeader, EmptyState, Badge } from '../../components/UI'
@@ -15,30 +15,37 @@ export default function AdminDashboard() {
       <PageHeader title="Executive & HR Command Center" subtitle="Unified workspace for recruitment, workforce onboarding, training compliance, and employee operations." icon={TrendingUp} />
 
       {/* HR Command Center Quick Hub */}
-      <div className="card mb-6" style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%)', border: '1px solid #fbcfe8' }}>
-        <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--brand-700)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-          ⚡ HR Workspace Quick Actions & Tools
+      <div className="card mb-6" style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%)', border: '1px solid #fbcfe8', borderRadius: 16 }}>
+        <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-700)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+          ⚡ Executive Quick Hub & Operations
         </div>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-          <a href="/app/joined" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
-            <UserRoundCheck size={18} color="var(--brand-500)" />
+          <a href="/app/managers" className="btn-soft flex" style={{ gap: 10, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 12, background: '#fff', border: '1px solid var(--border)' }}>
+            <ClipboardList size={20} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Manager Requisitions</div>
+              <div className="muted" style={{ fontSize: 11 }}>Assign Students & Track Status</div>
+            </div>
+          </a>
+          <a href="/app/jobs" className="btn-soft flex" style={{ gap: 10, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 12, background: '#fff', border: '1px solid var(--border)' }}>
+            <Briefcase size={20} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Jobs & Custom JDs</div>
+              <div className="muted" style={{ fontSize: 11 }}>Admin & Requisition JDs</div>
+            </div>
+          </a>
+          <a href="/app/pipeline" className="btn-soft flex" style={{ gap: 10, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 12, background: '#fff', border: '1px solid var(--border)' }}>
+            <Layers size={20} color="var(--brand-500)" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Recruitment Pipeline</div>
+              <div className="muted" style={{ fontSize: 11 }}>Multiple Pipelines per JD</div>
+            </div>
+          </a>
+          <a href="/app/joined" className="btn-soft flex" style={{ gap: 10, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 12, background: '#fff', border: '1px solid var(--border)' }}>
+            <UserRoundCheck size={20} color="var(--brand-500)" />
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Joined Candidates</div>
               <div className="muted" style={{ fontSize: 11 }}>Convert & Manage Undos</div>
-            </div>
-          </a>
-          <a href="/app/employees" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
-            <Users size={18} color="var(--brand-500)" />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Employee Directory</div>
-              <div className="muted" style={{ fontSize: 11 }}>Credentials & Identities</div>
-            </div>
-          </a>
-          <a href="/app/policy-assistant" className="btn-soft flex" style={{ gap: 8, justifyContent: 'flex-start', padding: '12px 16px', borderRadius: 10, background: '#fff', border: '1px solid var(--border)' }}>
-            <FileText size={18} color="var(--brand-500)" />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>Policy Storage</div>
-              <div className="muted" style={{ fontSize: 11 }}>RAG AI Assistant</div>
             </div>
           </a>
         </div>
@@ -47,7 +54,7 @@ export default function AdminDashboard() {
       <div className="grid-stats mb-4">
         <StatCard icon={Users} label="Candidates" value={k.candidates ?? 0} tone="brand" />
         <StatCard icon={FileText} label="Applications" value={k.applications ?? 0} tone="violet" />
-        <StatCard icon={Briefcase} label="Open Jobs" value={k.open_jobs ?? 0} tone="blue" />
+        <StatCard icon={Briefcase} label="Published JDs" value={k.open_jobs ?? 0} tone="blue" />
         <StatCard icon={Building2} label="Colleges" value={k.colleges ?? 0} tone="green" />
         <StatCard icon={GraduationCap} label="Students" value={k.students ?? 0} tone="amber" />
         <StatCard icon={CalendarClock} label="Interviews" value={k.interviews ?? 0} tone="blue" />
@@ -61,7 +68,7 @@ export default function AdminDashboard() {
       ) : (
         <div className="two-col mt-6">
           <div className="card card-pad stack" style={{ minHeight: 450 }}>
-            <h3 className="h2 mb-6" style={{ fontSize: 18 }}>Pipeline by Stage</h3>
+            <h3 className="h2 mb-6" style={{ fontSize: 18 }}>Pipeline Candidates by Stage</h3>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={data.by_stage} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
                 <defs>
@@ -78,24 +85,26 @@ export default function AdminDashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+
           <div className="card card-pad stack" style={{ minHeight: 450 }}>
             <h3 className="h2 mb-4" style={{ fontSize: 18 }}>Applications by Source</h3>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
-                <Pie data={data.by_source.filter(d => d.count > 0)} dataKey="count" nameKey="source" cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4}>
-                  {data.by_source.filter(d => d.count > 0).map((entry, i) => {
+                <Pie data={(data.by_source || []).filter(d => d.count > 0)} dataKey="count" nameKey="source" cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4}>
+                  {(data.by_source || []).filter(d => d.count > 0).map((entry, i) => {
                     const originalIndex = data.by_source.findIndex(d => d.source === entry.source);
                     return <Cell key={i} fill={CHART_COLORS[originalIndex % CHART_COLORS.length]} stroke="none" />;
                   })}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: 'var(--shadow-md)' }} />
-                <Legend payload={data.by_source.map((entry, i) => ({ id: entry.source, type: 'circle', value: entry.source, color: CHART_COLORS[i % CHART_COLORS.length] }))} iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 20 }} />
+                <Legend payload={(data.by_source || []).map((entry, i) => ({ id: entry.source, type: 'circle', value: entry.source, color: CHART_COLORS[i % CHART_COLORS.length] }))} iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: 20 }} />
               </PieChart>
             </ResponsiveContainer>
+
             {funnel?.conversions && (
-              <div className="mt-8" style={{ background: 'var(--surface-2)', padding: 20, borderRadius: 16 }}>
-                <h4 className="h2 mb-4" style={{ fontSize: 15 }}>Conversion Rates</h4>
-                <div className="stack" style={{ gap: 12 }}>
+              <div className="mt-6" style={{ background: 'var(--surface-2)', padding: 18, borderRadius: 14 }}>
+                <h4 className="h2 mb-4" style={{ fontSize: 14.5 }}>Conversion Rates</h4>
+                <div className="stack" style={{ gap: 10 }}>
                   {Object.entries(funnel.conversions).map(([k2, v]) => {
                     const [from, to] = k2.split('_to_')
                     return (
@@ -105,7 +114,7 @@ export default function AdminDashboard() {
                           <ArrowRight size={14} color="var(--brand-400)" />
                           <span style={{ textTransform: 'capitalize', color: 'var(--text)' }}>{to}</span>
                         </div>
-                        <Badge variant={v >= 50 ? 'badge-green' : v >= 25 ? 'badge-blue' : 'badge-gray'} style={{ fontSize: 12.5, fontWeight: 700 }}>
+                        <Badge variant={v >= 50 ? 'badge-green' : v >= 25 ? 'badge-blue' : 'badge-gray'} style={{ fontSize: 12, fontWeight: 700 }}>
                           {v}%
                         </Badge>
                       </div>

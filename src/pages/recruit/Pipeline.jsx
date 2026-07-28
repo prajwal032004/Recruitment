@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { KanbanSquare, Filter, RotateCcw } from 'lucide-react'
-import { apiGet, apiPut, apiPost } from '../../api/client'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { KanbanSquare, Filter, RotateCcw, Briefcase, Layers } from 'lucide-react'
+import { apiGet, apiPut, apiPost, apiDelete } from '../../api/client'
 import { LoadingSpinner, ErrorState, EmptyState, PageHeader, Badge } from '../../components/UI'
 import { useToast } from '../../contexts/ToastContext'
 import { useFetch } from '../../components/hooks'
@@ -21,11 +21,14 @@ function eligBadge(s) {
 }
 
 export default function Pipeline() {
+  const [searchParams] = useSearchParams()
+  const initialJobId = searchParams.get('job_id') || ''
+
   const [board, setBoard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [dragId, setDragId] = useState(null)
-  const [filters, setFilters] = useState({ source: '', job_id: '' })
+  const [filters, setFilters] = useState({ source: '', job_id: initialJobId })
   const [showRejected, setShowRejected] = useState(true)
   const [contextMenu, setContextMenu] = useState(null)
   const [joinedMoveConfirm, setJoinedMoveConfirm] = useState(null)
@@ -132,9 +135,71 @@ export default function Pipeline() {
   const total = Object.values(board?.counts || {}).reduce((a, b) => a + b, 0)
   const rejectedList = board?.terminal?.Rejected || []
 
+  const selectedJob = (jobsData?.items || []).find(j => String(j.id) === String(filters.job_id))
+
   return (
     <div style={{ position: 'relative' }}>
-      <PageHeader title="Recruitment Pipeline" subtitle="Drag candidates between stages. Full history is preserved." icon={KanbanSquare} />
+      <PageHeader title="Recruitment Pipeline" subtitle="Drag candidates between stages. Filter or switch pipelines across multiple JDs." icon={KanbanSquare} />
+
+      {/* Multi-JD Quick Switcher Bar */}
+      <div className="card mb-4" style={{ padding: '16px 20px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Layers size={18} color="var(--brand-500)" />
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--brand-700)' }}>
+              RECRUITMENT PIPELINES BY JD
+            </span>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>
+            {selectedJob ? `Viewing JD: ${selectedJob.title} (${selectedJob.department_name || 'General'})` : 'Viewing Consolidated All-JD Pipeline'}
+          </span>
+        </div>
+
+        {/* Quick JD Pills */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          <button
+            onClick={() => setFilters({ ...filters, job_id: '' })}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: 12.5,
+              fontWeight: 700,
+              border: !filters.job_id ? 'none' : '1px solid #cbd5e1',
+              cursor: 'pointer',
+              background: !filters.job_id ? 'var(--brand-500, #c5307b)' : '#f8fafc',
+              color: !filters.job_id ? '#ffffff' : 'var(--text)',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            All JDs Board
+          </button>
+          {(jobsData?.items || []).slice(0, 7).map(j => {
+            const isSelected = String(j.id) === String(filters.job_id)
+            return (
+              <button
+                key={j.id}
+                onClick={() => setFilters({ ...filters, job_id: String(j.id) })}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  border: isSelected ? 'none' : '1px solid #e2e8f0',
+                  cursor: 'pointer',
+                  background: isSelected ? 'linear-gradient(135deg, #c5307b 0%, #9e1f5f 100%)' : '#f8fafc',
+                  color: isSelected ? '#ffffff' : 'var(--text-2)',
+                  boxShadow: isSelected ? '0 3px 8px rgba(197, 48, 123, 0.25)' : 'none',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                #{j.id} {j.title} {j.is_manager_requisition ? '• Req' : ''}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="card flex wrap" style={{ gap: 12, padding: '16px 20px', marginBottom: 24, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--brand-600)', fontWeight: 600, fontSize: 13, background: 'var(--brand-50)', padding: '8px 12px', borderRadius: 8 }}>
@@ -148,10 +213,14 @@ export default function Pipeline() {
           <option value="DIRECT">Direct Upload</option>
           <option value="REFERRAL">Referral</option>
         </select>
-        <select className="select" style={{ minWidth: 160, flex: 1, background: 'var(--surface-2)' }} value={filters.job_id}
+        <select className="select" style={{ minWidth: 200, flex: 1, background: 'var(--surface-2)', fontWeight: 600 }} value={filters.job_id}
           onChange={(e) => setFilters({ ...filters, job_id: e.target.value })}>
-          <option value="">All jobs</option>
-          {(jobsData?.items || []).map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
+          <option value="">All jobs ({jobsData?.items?.length || 0} JDs available)</option>
+          {(jobsData?.items || []).map((j) => (
+            <option key={j.id} value={j.id}>
+              #{j.id} {j.title} ({j.department_name || 'General'}) {j.is_manager_requisition ? '[Manager Req]' : '[Admin Custom JD]'}
+            </option>
+          ))}
         </select>
         <button 
           className="btn-soft" 

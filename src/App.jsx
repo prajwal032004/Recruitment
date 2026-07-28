@@ -55,6 +55,7 @@ import MyProfile from './pages/employee/MyProfile'
 import ManagerLayout from './layouts/ManagerLayout'
 import ManagerLogin from './pages/manager/ManagerLogin'
 import ManagerDashboard from './pages/manager/ManagerDashboard'
+import ManagerRequisitions from './pages/manager/ManagerRequisitions'
 import ManagerSourcing from './pages/manager/ManagerSourcing'
 import JDPipelineView from './pages/manager/JDPipelineView'
 import ManagerInterviews from './pages/manager/ManagerInterviews'
@@ -98,7 +99,7 @@ export default function App() {
       <Route path="/manager/:deptSlug/login" element={<ManagerLogin />} />
       <Route path="/manager/:deptSlug" element={<ProtectedRoute roles={['DEPT_MANAGER', 'ADMIN', 'HR']}><ManagerLayout /></ProtectedRoute>}>
         <Route index element={<ManagerDashboard />} />
-        <Route path="requests" element={<ManagerDashboard />} />
+        <Route path="requests" element={<ManagerRequisitions />} />
         <Route path="candidates" element={<ManagerSourcing />} />
         <Route path="sourcing" element={<ManagerSourcing />} />
         <Route path="pipeline" element={<JDPipelineView />} />

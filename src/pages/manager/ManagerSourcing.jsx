@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import {
   UserCheck, Filter, CheckCircle2, Search, Building2, Briefcase, Mail, Phone,
   Award, FileText, Check, X, Sparkles, Clock, AlertCircle, ArrowUpRight, UserPlus,
-  ChevronRight, Layers, Target, ThumbsUp
+  ChevronRight, Layers, Target, ThumbsUp, Eye
 } from 'lucide-react'
 import { apiGet, apiPost } from '../../api/client'
 import { useToast } from '../../contexts/ToastContext'
@@ -30,16 +30,35 @@ export default function ManagerSourcing() {
   })
   const [busy, setBusy] = useState(false)
 
+  // Candidate detail modal state
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedCandDetail, setSelectedCandDetail] = useState(null)
+
+  const openCandidateDetail = (app) => {
+    setSelectedCandDetail(app)
+    setDetailModalOpen(true)
+  }
+
   const loadData = async () => {
     setLoading(true)
     try {
-      const reqs = await apiGet('/manager/hiring-requests')
-      setHiringRequests(reqs || [])
-      if (reqs && reqs.length > 0 && !selectedReqId) {
-        setSelectedReqId(reqs[0].id)
+      const reqs = await apiGet(`/manager/hiring-requests?dept_slug=${slug}`)
+      const deptReqs = (reqs || []).filter(r => {
+        if (!r) return false
+        const rSlug = (r.department_slug || '').toLowerCase()
+        const rDeptName = (r.department_name || '').toLowerCase().replace(/\s+/g, '-')
+        return rSlug === slug || rDeptName === slug || slug.includes(rSlug) || rSlug.includes(slug)
+      })
+      setHiringRequests(deptReqs)
+      if (deptReqs.length > 0) {
+        if (!selectedReqId || !deptReqs.some(r => r.id === selectedReqId)) {
+          setSelectedReqId(deptReqs[0].id)
+        }
+      } else {
+        setSelectedReqId(null)
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to load requisitions.')
+      toast.error(err.message || 'Failed to load requisitions for your department.')
     } finally {
       setLoading(false)
     }
@@ -65,12 +84,23 @@ export default function ManagerSourcing() {
 
   const selectedReq = hiringRequests.find(r => r.id === selectedReqId) || hiringRequests[0]
 
-  const handleVerifyCandidate = (appId, status) => {
+  const handleVerifyCandidate = async (appId, status) => {
     setVerifiedMap(prev => ({ ...prev, [appId]: status }))
-    if (status === 'APPROVED') {
-      toast.success('Candidate cross-verified & approved for interviews!')
-    } else {
-      toast.info('Candidate marked as rejected.')
+    try {
+      await apiPost(`/manager/hiring-requests/${selectedReqId}/verify-candidate`, {
+        application_id: appId,
+        status: status
+      })
+      if (status === 'APPROVED') {
+        toast.success('Candidate cross-verified & approved for interviews!')
+      } else {
+        toast.info('Candidate marked as rejected.')
+      }
+      // Refresh list
+      const detail = await apiGet(`/manager/hiring-requests/${selectedReqId}`)
+      setSourcedCandidates(detail.applications || [])
+    } catch (err) {
+      toast.error(err.message || 'Failed to update candidate verification status.')
     }
   }
 
@@ -95,11 +125,19 @@ export default function ManagerSourcing() {
     }
   }
 
-  const approvedCount = Object.values(verifiedMap).filter(v => v === 'APPROVED').length
+  const approvedCount = sourcedCandidates.filter(a => a.stage === 'Shortlisted' || verifiedMap[a.id] === 'APPROVED').length
   const totalNeeded = selectedReq ? (selectedReq.openings || 1) : 1
 
   const handleCompleteVerification = async () => {
-    toast.success(`Verification complete! ${approvedCount} candidate(s) approved and sent to HR/Recruitment Admin.`)
+    if (!selectedReqId) return
+    try {
+      await apiPost(`/manager/hiring-requests/${selectedReqId}/complete-verification`)
+      toast.success(`Verification complete! Requisition #${selectedReqId} approved & sent to HR/Recruitment Admin.`)
+      const reqs = await apiGet('/manager/hiring-requests')
+      setHiringRequests(reqs || [])
+    } catch (err) {
+      toast.error(err.message || 'Failed to complete verification.')
+    }
   }
 
   if (loading) return <LoadingSpinner full label="Loading candidate verification desk..." />
@@ -108,8 +146,9 @@ export default function ManagerSourcing() {
     <div style={{ paddingBottom: 60, maxWidth: 1280, margin: '0 auto' }}>
       {/* Top Banner */}
       <div
+        className="dept-mgr-hero"
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #831f51 100%)',
           borderRadius: 20,
           padding: '28px 32px',
           color: '#ffffff',
@@ -120,7 +159,7 @@ export default function ManagerSourcing() {
         }}
       >
         {/* Subtle decorative background circle */}
-        <div style={{ position: 'absolute', right: -40, top: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(99, 102, 241, 0.12)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: -40, top: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, position: 'relative', zIndex: 1 }}>
           <div>
@@ -156,19 +195,20 @@ export default function ManagerSourcing() {
 
           <button
             onClick={() => setModalOpen(true)}
+            className="dept-mgr-hero-btn"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-              color: '#ffffff',
+              background: '#ffffff',
+              color: '#312e81',
               border: 'none',
               borderRadius: 12,
               padding: '12px 22px',
               fontSize: 14,
               fontWeight: 700,
               cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(99, 102, 241, 0.35)',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
               transition: 'transform 0.15s ease, boxShadow 0.15s ease'
             }}
           >
@@ -221,16 +261,18 @@ export default function ManagerSourcing() {
               onChange={(e) => setSelectedReqId(Number(e.target.value))}
               style={{
                 width: '100%',
-                maxWidth: 520,
+                maxWidth: 540,
                 fontWeight: 700,
-                fontSize: 14.5,
+                fontSize: 14,
                 color: '#0f172a',
-                padding: '8px 14px',
-                borderRadius: 10,
+                height: 42,
+                padding: '0 16px',
+                borderRadius: 12,
                 border: '1.5px solid #cbd5e1',
                 background: '#f8fafc',
                 cursor: 'pointer',
-                outline: 'none'
+                outline: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
               }}
             >
               {hiringRequests.map(r => (
@@ -357,9 +399,9 @@ export default function ManagerSourcing() {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20 }}>
+        <div className="dept-cand-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 20 }}>
           {sourcedCandidates.map((app) => {
-            const status = verifiedMap[app.id]
+            const status = verifiedMap[app.id] || (app.stage === 'Shortlisted' ? 'APPROVED' : app.stage === 'Rejected' ? 'REJECTED' : null)
             const skillsList = app.candidate_skills || []
             return (
               <div
@@ -430,7 +472,29 @@ export default function ManagerSourcing() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
+                <div className="mgr-card-actions" style={{ display: 'flex', gap: 8, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
+                  <button
+                    onClick={() => openCandidateDetail(app)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 4,
+                      background: '#eef2ff',
+                      color: '#4f46e5',
+                      border: '1px solid #c7d2fe',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                    title="View candidate full profile"
+                  >
+                    <Eye size={15} />
+                    <span>View Profile</span>
+                  </button>
+
                   <button
                     onClick={() => handleVerifyCandidate(app.id, 'APPROVED')}
                     style={{
@@ -438,18 +502,18 @@ export default function ManagerSourcing() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 6,
+                      gap: 4,
                       background: status === 'APPROVED' ? '#10b981' : '#f1f5f9',
                       color: status === 'APPROVED' ? '#ffffff' : '#0f172a',
                       border: 'none',
                       borderRadius: 8,
-                      padding: '9px 12px',
-                      fontSize: 13,
+                      padding: '8px 10px',
+                      fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    <Check size={16} />
+                    <Check size={15} />
                     <span>Approve</span>
                   </button>
 
@@ -459,18 +523,18 @@ export default function ManagerSourcing() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 6,
+                      gap: 4,
                       background: status === 'REJECTED' ? '#ef4444' : '#f1f5f9',
                       color: status === 'REJECTED' ? '#ffffff' : '#64748b',
                       border: 'none',
                       borderRadius: 8,
-                      padding: '9px 14px',
-                      fontSize: 13,
+                      padding: '8px 10px',
+                      fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    <X size={16} />
+                    <X size={15} />
                     <span>Reject</span>
                   </button>
                 </div>
@@ -498,14 +562,14 @@ export default function ManagerSourcing() {
             </div>
 
             <div className="field">
-              <label style={{ fontWeight: 700, fontSize: 12.5, color: '#334155' }}>Email Address *</label>
+              <label style={{ fontWeight: 700, fontSize: 12.5, color: '#334155' }}>Candidate Email *</label>
               <input
                 type="email"
                 required
                 className="input"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="e.g. sarah.j@example.com"
+                placeholder="sarah.jenkins@example.com"
                 style={{ width: '100%', height: 42, borderRadius: 8 }}
               />
             </div>
@@ -548,6 +612,105 @@ export default function ManagerSourcing() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Modal to View Detailed Candidate Profile */}
+      {detailModalOpen && selectedCandDetail && (
+        <Modal
+          title={`Candidate Profile — ${selectedCandDetail.candidate_name || 'Candidate'}`}
+          onClose={() => setDetailModalOpen(false)}
+          width={720}
+        >
+          <div style={{ padding: '4px 0' }}>
+            {/* Header Card */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', padding: '20px 24px', borderRadius: 16, color: '#ffffff', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <Avatar name={selectedCandDetail.candidate_name || 'Candidate'} size={56} style={{ border: '3px solid #818cf8' }} />
+                <div>
+                  <h2 style={{ margin: '0 0 4px 0', fontSize: 20, fontWeight: 800, color: '#ffffff' }}>
+                    {selectedCandDetail.candidate_name}
+                  </h2>
+                  <div style={{ fontSize: 13, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    <span><Mail size={13} style={{ display: 'inline', marginRight: 4 }} />{selectedCandDetail.candidate_email || 'N/A'}</span>
+                    {selectedCandDetail.candidate_phone && <span><Phone size={13} style={{ display: 'inline', marginRight: 4 }} />{selectedCandDetail.candidate_phone}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <Badge variant={selectedCandDetail.stage === 'Shortlisted' ? 'success' : selectedCandDetail.stage === 'Rejected' ? 'danger' : 'info'}>
+                  {selectedCandDetail.stage || 'Applied'}
+                </Badge>
+                <div style={{ fontSize: 12, color: '#38bdf8', fontWeight: 700, marginTop: 6 }}>
+                  Match Score: {selectedCandDetail.match_score ? Math.round(selectedCandDetail.match_score) : 85}%
+                </div>
+              </div>
+            </div>
+
+            {/* Academic & Background Details */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>College / Source</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 4 }}>
+                  {selectedCandDetail.college_name || selectedCandDetail.source || 'Campus Student'}
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Degree & Branch</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 4 }}>
+                  {selectedCandDetail.degree || 'B.Tech'} — {selectedCandDetail.branch || 'CSE'}
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Academic Marks</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#059669', marginTop: 4 }}>
+                  {selectedCandDetail.cgpa ? `CGPA: ${selectedCandDetail.cgpa}` : 'CGPA: N/A'}
+                  {selectedCandDetail.tenth_pct ? ` • 10th: ${selectedCandDetail.tenth_pct}%` : ''}
+                </div>
+              </div>
+            </div>
+
+            {/* Skills */}
+            {(selectedCandDetail.candidate_skills || []).length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>Technical Skills</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {selectedCandDetail.candidate_skills.map((sk, i) => (
+                    <span key={i} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 8, background: '#e0e7ff', color: '#3730a3' }}>
+                      {sk}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="row gap-12 justify-end mt-24" style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16, display: 'flex', alignItems: 'center' }}>
+              <button
+                onClick={() => {
+                  handleVerifyCandidate(selectedCandDetail.id, 'REJECTED')
+                  setDetailModalOpen(false)
+                }}
+                className="btn btn-ghost"
+                style={{ color: '#ef4444', fontWeight: 700 }}
+              >
+                <X size={16} /> Reject Candidate
+              </button>
+              <button
+                onClick={() => {
+                  handleVerifyCandidate(selectedCandDetail.id, 'APPROVED')
+                  setDetailModalOpen(false)
+                }}
+                className="btn btn-primary"
+                style={{ background: '#10b981', fontWeight: 700 }}
+              >
+                <Check size={16} /> Approve Candidate
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

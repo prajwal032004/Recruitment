@@ -1074,3 +1074,31 @@ table.data tbody tr:hover { background: #f8fafc; }
   }
 }
 
+/* ============================================================
+   Department Manager Responsive Utilities
+   ============================================================ */
+@media (max-width: 768px) {
+  .dept-mgr-hero {
+    padding: 20px 18px !important;
+    border-radius: 14px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .dept-mgr-hero-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .dept-cand-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .mgr-card-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .mgr-card-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+
