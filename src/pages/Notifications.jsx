@@ -620,7 +620,7 @@ export default function Notifications() {
                               gap: 4
                             }}
                           >
-                            {n.is_read ? <MailRead size={14} /> : <Mail size={14} />}
+                            {n.is_read ? <MailOpen size={14} /> : <Mail size={14} />}
                             {n.is_read ? 'Mark Unread' : 'Mark Read'}
                           </button>
 
