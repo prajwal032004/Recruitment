@@ -282,6 +282,7 @@ table.data tbody tr:hover { background: #f8fafc; }
   width: var(--sidebar-w); flex-shrink: 0; background: var(--surface);
   border-right: 1px solid var(--border); display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh; z-index: 40;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .sidebar-brand { 
   display: flex; align-items: center; gap: 12px; padding: 20px 24px; 
@@ -334,7 +335,7 @@ table.data tbody tr:hover { background: #f8fafc; }
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--brand-600); border-color: var(--border-2); transform: translateY(-1px); }
 .mobile-only { display: none; }
-.backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 30; animation: fade 0.2s; }
+.backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 30; animation: fade 0.25s ease; }
 
 /* Notifications */
 .notif-wrap { position: relative; }
@@ -424,23 +425,52 @@ table.data tbody tr:hover { background: #f8fafc; }
 /* Responsive Adjustments */
 @media (max-width: 1024px) {
   .two-col { grid-template-columns: 1fr; }
+  .topbar { padding: 0 20px; }
+  .topbar-right { gap: 14px; }
+  .content { padding: 24px 20px; }
 }
+
 @media (max-width: 768px) {
-  .sidebar { position: fixed; z-index: 40; left: 0; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-lg); }
+  .sidebar {
+    position: fixed; z-index: 40; left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 8px 0 32px rgba(15, 23, 42, 0.15);
+  }
   .sidebar.open { transform: translateX(0); }
   .mobile-only { display: grid; }
-  .topbar { padding: 0 16px; height: 64px; }
-  .content { padding: 20px; }
+
+  .topbar { padding: 0 12px; height: 56px; gap: 10px; }
+  .topbar-title { font-size: 14px; }
+  .topbar-right { gap: 10px; }
+  .topbar-user {
+    padding: 3px;
+    border-radius: 50%;
+  }
+  .tu-meta { display: none; }
+
+  .content { padding: 16px 14px; }
   .grid-cards, .grid-stats { grid-template-columns: 1fr; }
   .auth-card { padding: 24px; }
   .public-nav { padding: 0 20px; }
-  .kanban { padding-bottom: 12px; margin: 0 -20px; padding: 10px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-  .kcol { flex: 0 0 280px; max-height: 72vh; scroll-snap-align: start; scroll-margin-left: 20px; }
-  
+  .kanban { padding-bottom: 12px; margin: 0 -14px; padding: 10px 14px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .kcol { flex: 0 0 280px; max-height: 72vh; scroll-snap-align: start; scroll-margin-left: 14px; }
+
   .card.wrap { flex-direction: column; align-items: stretch !important; gap: 12px !important; }
   .card.wrap .select, .card.wrap .input { width: 100% !important; }
   .card.wrap .badge { margin-left: 0 !important; align-self: flex-start; }
 }
+
+@media (max-width: 480px) {
+  .topbar { padding: 0 10px; height: 52px; }
+  .topbar-title { font-size: 13px; }
+  .content { padding: 12px 10px; }
+  .sidebar-brand { padding: 16px 18px; height: 60px; }
+  .sidebar { width: 280px; }
+  .nav-item { padding: 9px 12px; font-size: 13px; }
+  .icon-btn { padding: 6px; border-radius: 8px; }
+}
+
 
 /* ============================================================
    MPC Cloud Consulting - Public Theme
