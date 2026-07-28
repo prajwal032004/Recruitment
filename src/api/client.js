@@ -21,13 +21,21 @@ api.interceptors.response.use(
   (res) => res,
   (error) => {
     const status = error.response?.status
-    if (status === 401 && !error.config?.url?.includes('/auth/login')) {
+    if (status === 401 && !error.config?.url?.includes('/auth/login') && !error.config?.url?.includes('/auth/manager-login')) {
       localStorage.removeItem('hr_token')
       localStorage.removeItem('hr_user')
-      if (!window.location.pathname.startsWith('/login') &&
-          !window.location.pathname.startsWith('/careers') &&
-          window.location.pathname !== '/') {
-        window.location.href = '/login'
+      const path = window.location.pathname
+      const isLoginPage = path.startsWith('/login') || path.includes('/login')
+      const isCareersPage = path.startsWith('/careers')
+      const isHomePage = path === '/'
+      if (!isLoginPage && !isCareersPage && !isHomePage) {
+        // Redirect managers to their department login page
+        const managerMatch = path.match(/^\/manager\/([^/]+)/)
+        if (managerMatch) {
+          window.location.href = `/manager/${managerMatch[1]}/login`
+        } else {
+          window.location.href = '/login'
+        }
       }
     }
     const message =
