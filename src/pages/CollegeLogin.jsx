@@ -47,8 +47,8 @@ export default function CollegeLogin() {
         </form>
 
         <div className="mt-4 flex wrap" style={{ gap: 8, justifyContent: 'center' }}>
-          <button type="button" className="btn-soft btn-sm" onClick={() => { setEmail('sharan@gmail.com'); setPassword('123456') }}>
-            Demo Fill (sharan@gmail.com)
+          <button type="button" className="btn-soft btn-sm" onClick={() => { setEmail('sharan@jssateb.ac.in'); setPassword('123456') }}>
+            Demo Fill (sharan@jssateb.ac.in)
           </button>
         </div>
 

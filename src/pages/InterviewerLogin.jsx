@@ -54,6 +54,13 @@ export default function InterviewerLogin() {
             <LogIn size={17} /> {busy ? 'Signing in…' : 'Sign in to Interviewer Portal'}
           </button>
         </form>
+
+        <div className="mt-4 flex wrap" style={{ gap: 8, justifyContent: 'center' }}>
+          <button type="button" className="btn-soft btn-sm" onClick={() => { setEmail('rahul.sharma@mpc.com'); setPassword('123456') }}>
+            Demo Fill (rahul.sharma@mpc.com)
+          </button>
+        </div>
+
         <p className="muted mt-4" style={{ textAlign: 'center', fontSize: 13 }}>
           This portal is reserved for interviewers. Contact your HR administrator for access.
         </p>

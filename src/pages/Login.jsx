@@ -67,15 +67,18 @@ export default function Login() {
           <div className="divider" style={{ margin: '32px 0' }} />
           
           <div className="flex wrap" style={{ gap: 8, justifyContent: 'center', marginBottom: 32 }}>
-            <span className="eyebrow" style={{ width: '100%', textAlign: 'center' }}>Demo Accounts</span>
-            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('admin@recruit.local'); setPassword('admin12345') }}>
-              Admin
+            <span className="eyebrow" style={{ width: '100%', textAlign: 'center', marginBottom: 4 }}>Demo Quick Access</span>
+            <button type="button" className="mpc-btn-outline" style={{ fontSize: 12 }} onClick={() => { setEmail('admin@mpc.com'); setPassword('admin12345') }}>
+              Admin (admin@mpc.com)
             </button>
-            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('sharan@gmail.com'); setPassword('123456') }}>
-              Placement Officer (JSSATE)
+            <button type="button" className="mpc-btn-outline" style={{ fontSize: 12 }} onClick={() => { setEmail('rahul.sharma@mpc.com'); setPassword('123456') }}>
+              Interviewer (rahul.sharma@mpc.com)
             </button>
-            <button type="button" className="mpc-btn-outline" onClick={() => { setEmail('prakash@gmail.com'); setPassword('admin123') }}>
-              Interviewer
+            <button type="button" className="mpc-btn-outline" style={{ fontSize: 12 }} onClick={() => { setEmail('sharan@jssateb.ac.in'); setPassword('123456') }}>
+              Placement Officer (sharan@jssateb.ac.in)
+            </button>
+            <button type="button" className="mpc-btn-outline" style={{ fontSize: 12 }} onClick={() => { setEmail('manager.engineering@mpc.com'); setPassword('123456') }}>
+              Manager (manager.engineering@mpc.com)
             </button>
           </div>
 

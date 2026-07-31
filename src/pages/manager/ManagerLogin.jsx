@@ -68,7 +68,7 @@ export default function ManagerLogin() {
   const fillDemo = (item) => {
     navigate(`/manager/${item.slug}/login`)
     setEmail(item.email)
-    setPassword('manager123')
+    setPassword('123456')
   }
 
   if (loading) return <LoadingSpinner full label="Loading Department Manager Portal..." />
